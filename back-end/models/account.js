@@ -5,6 +5,7 @@ const AccountSchema = new mongoose.Schema(
     username: {
       type: String,
       required: true,
+      unique: true,
     },
     email: {
       type: String,
@@ -16,6 +17,10 @@ const AccountSchema = new mongoose.Schema(
       required: true,
     },
     completedCourses: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "Course",
+    },
+    enrolledCourses: {
       type: [mongoose.Schema.Types.ObjectId],
       ref: "Course",
     },
