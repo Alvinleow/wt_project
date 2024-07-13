@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Course = require("../models/course");
 const { storage } = require("../config/firebase");
 
@@ -128,5 +129,45 @@ exports.deleteCourse = async (req, res) => {
     res.json({ message: "Course deleted" });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+exports.addLesson = async (req, res) => {
+  const { title } = req.body;
+  const { courseId } = req.params;
+
+  try {
+    const course = await Course.findById(new mongoose.Types.ObjectId(courseId));
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    course.lessons.push({ title, content: "" });
+    course.totalOfLessons = course.lessons.length;
+    await course.save();
+
+    res.json(course);
+  } catch (err) {
+    console.error("Error adding lesson:", err);
+    res.status(400).json({ message: err.message });
+  }
+};
+
+exports.updateLesson = async (req, res) => {
+  const { content } = req.body;
+  const { courseId, lessonId } = req.params;
+
+  try {
+    const course = await Course.findById(new mongoose.Types.ObjectId(courseId));
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    const lesson = course.lessons.id(new mongoose.Types.ObjectId(lessonId));
+    if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+
+    lesson.content = content;
+    await course.save();
+
+    res.json(course);
+  } catch (err) {
+    console.error("Error updating lesson:", err);
+    res.status(400).json({ message: err.message });
   }
 };
