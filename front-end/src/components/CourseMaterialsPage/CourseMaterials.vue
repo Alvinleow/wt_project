@@ -68,29 +68,39 @@
     </div>
 
     <!-- Course Details Modal -->
-    <div
-      v-if="showCourseModal"
-      class="course-modal-overlay"
-      @click="hideCourseDetails"
-    >
-      <div class="course-modal" @click.stop>
+    <div v-if="showCourseModal" class="course-modal-overlay">
+      <div class="course-modal">
         <h2>{{ selectedCourse.title }}</h2>
         <img :src="selectedCourse.thumbnail" alt="Course Thumbnail" />
-        <p><strong>Description:</strong> {{ selectedCourse.description }}</p>
-        <p><strong>Lessons:</strong> {{ selectedCourse.totalOfLessons }}</p>
-        <p><strong>Enrollments:</strong> {{ selectedCourse.enrollment }}</p>
-        <p>
-          <strong>Date Created:</strong>
-          {{ formatDate(selectedCourse.createdAt) }}
-        </p>
-        <p>
-          <strong>Date Updated:</strong>
-          {{ formatDate(selectedCourse.updatedAt) }}
-        </p>
-        <button @click="enrollCourse(selectedCourse._id)" class="enroll-btn">
+        <p>{{ selectedCourse.description }}</p>
+        <p>Total Lessons: {{ selectedCourse.totalOfLessons }}</p>
+        <p>Enrollments: {{ selectedCourse.enrollment }}</p>
+        <button
+          v-if="!isEnrolledInCourse(selectedCourse._id)"
+          @click="enrollInCourse"
+        >
           Enroll Course
         </button>
-        <button @click="hideCourseDetails">Close</button>
+        <div v-else>
+          <button class="view-lessons-btn">View Lessons</button>
+          <button class="unenroll-btn" @click="confirmUnenroll">
+            Unenroll Course
+          </button>
+        </div>
+        <button @click="closeCourseModal">Close</button>
+      </div>
+    </div>
+
+    <!-- Unenroll Confirmation Modal -->
+    <div v-if="showConfirmUnenrollModal" class="course-modal-overlay">
+      <div class="course-modal">
+        <h2>Unenroll Course</h2>
+        <p>
+          You will lose all your progress if you unenroll from the course. Do
+          you want to continue?
+        </p>
+        <button @click="unenrollFromCourse">OK</button>
+        <button @click="closeUnenrollModal">Cancel</button>
       </div>
     </div>
   </div>
@@ -109,14 +119,15 @@ export default {
       courses: [],
       filteredCourses: [],
       showForm: false,
-      showCourseModal: false,
       newCourse: {
         title: "",
         description: "",
         thumbnail: null,
       },
       previewThumbnail: null,
+      showCourseModal: false,
       selectedCourse: null,
+      showConfirmUnenrollModal: false,
     };
   },
   computed: {
@@ -205,31 +216,48 @@ export default {
       this.selectedCourse = course;
       this.showCourseModal = true;
     },
-    hideCourseDetails() {
+    closeCourseModal() {
       this.showCourseModal = false;
       this.selectedCourse = null;
     },
-    formatDate(date) {
-      return new Date(date).toLocaleDateString();
+    isEnrolledInCourse(courseId) {
+      return this.user && this.user.enrolledCourses.includes(courseId);
     },
-    async enrollCourse(courseId) {
-      if (!this.userId) {
-        console.error("User ID is not set");
-        return;
-      }
-
+    async enrollInCourse() {
       try {
         await axios.put(
-          `http://localhost:8081/api/accounts/${this.userId}/enroll`,
+          `http://localhost:8081/api/accounts/enroll/${this.userId}`,
           {
-            courseId,
+            courseId: this.selectedCourse._id,
           }
         );
-        alert("Enrolled in course successfully!");
-        this.hideCourseDetails();
+        this.user.enrolledCourses.push(this.selectedCourse._id);
+        this.closeCourseModal();
       } catch (error) {
         console.error("Error enrolling in course:", error);
-        alert("Failed to enroll in course. Please try again.");
+      }
+    },
+    confirmUnenroll() {
+      this.showConfirmUnenrollModal = true;
+    },
+    closeUnenrollModal() {
+      this.showConfirmUnenrollModal = false;
+    },
+    async unenrollFromCourse() {
+      try {
+        await axios.put(
+          `http://localhost:8081/api/accounts/unenroll/${this.userId}`,
+          {
+            courseId: this.selectedCourse._id,
+          }
+        );
+        this.user.enrolledCourses = this.user.enrolledCourses.filter(
+          (id) => id !== this.selectedCourse._id
+        );
+        this.closeUnenrollModal();
+        this.closeCourseModal();
+      } catch (error) {
+        console.error("Error unenrolling from course:", error);
       }
     },
   },
@@ -276,11 +304,15 @@ export default {
   text-align: center;
   padding: 20px;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: transform 0.3s ease-in-out;
 }
 
 .course:hover {
-  transform: scale(1.02);
+  transform: scale(1.05);
+}
+
+.course:hover .course-title {
+  text-decoration: underline;
 }
 
 .course-thumbnail {
@@ -294,12 +326,6 @@ export default {
   font-size: 1.5rem;
   margin: 10px 0;
   color: #42b983;
-  text-decoration: none;
-  transition: text-decoration 0.2s;
-}
-
-.course:hover .course-title {
-  text-decoration: underline;
 }
 
 .course-lessons,
@@ -383,7 +409,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -391,29 +417,17 @@ export default {
 }
 
 .course-modal {
-  background: #000000;
+  background: #000;
   color: #fff;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  max-width: 600px;
-  width: 100%;
+  max-width: 500px;
   text-align: center;
 }
 
 .course-modal img {
-  width: 100%;
+  max-width: 100%;
   height: auto;
-  margin-bottom: 20px;
-}
-
-.course-modal h2 {
-  color: #fff;
-}
-
-.course-modal p {
-  color: #fff;
-  margin-bottom: 20px;
 }
 
 .course-modal button {
@@ -423,12 +437,25 @@ export default {
   cursor: pointer;
   font-size: 1rem;
   transition: background-color 0.3s;
+  margin-top: 20px;
+}
+
+.course-modal button:first-of-type {
   background-color: #42b983;
   color: white;
   margin-right: 10px;
 }
 
-.course-modal button:hover {
+.course-modal button:first-of-type:hover {
   background-color: #36a273;
+}
+
+.course-modal button:last-of-type {
+  background-color: #ff4d4d;
+  color: white;
+}
+
+.course-modal button:last-of-type:hover {
+  background-color: #ff1a1a;
 }
 </style>
