@@ -6,6 +6,7 @@ import CourseMaterialsPage from "../views/CourseMaterialsPage.vue";
 import CourseProgressPage from "../views/CourseProgressPage.vue";
 import ContactPage from "../views/ContactPage.vue";
 import ProfilePage from "../views/ProfilePage.vue";
+import LessonPage from "../views/LessonPage.vue";
 
 const routes = [
   { path: "/", name: "MainPage", component: MainPage },
@@ -30,6 +31,12 @@ const routes = [
     path: "/profile/:id",
     name: "ProfilePage",
     component: ProfilePage,
+    props: true,
+  },
+  {
+    path: "/lessons/:courseId",
+    name: "Lessons",
+    component: LessonPage,
     props: true,
   },
 ];
