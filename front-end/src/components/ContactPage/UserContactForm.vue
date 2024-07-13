@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import axios from 'axios'; // Add this import
+import axios from 'axios'; 
 
 export default {
   data() {
@@ -36,7 +36,7 @@ export default {
       email: '',
       subject: '',
       message: '',
-      successMessage: false, // Add successMessage to data
+      successMessage: false,
     };
   },
   methods: {
@@ -55,8 +55,8 @@ export default {
           message: this.message,
         });
         console.log('Form submitted successfully:', response.data);
-        this.successMessage = true; // Show success message
-        this.resetForm(); // Optional: Reset form fields after successful submission
+        this.successMessage = true; 
+        this.resetForm(); 
       } catch (error) {
         console.error('Error submitting form:', error);
       }
