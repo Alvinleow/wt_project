@@ -9,7 +9,7 @@
               v-for="(question, index) in quiz.questions"
               :key="question._id"
               :class="{ selected: selectedQuestionIndex === index }"
-              @click="selectQuestion(question, index)"
+              @click="isAdmin ? selectQuestion(question, index) : null"
             >
               Question {{ index + 1 }}
             </li>
@@ -19,7 +19,7 @@
           </div>
         </div>
         <div class="main-content">
-          <div class="action-buttons">
+          <div class="action-buttons" v-if="isAdmin">
             <button @click="showAddQuestionModal">Add Question</button>
             <button
               @click="showEditQuestionModal"
@@ -189,7 +189,6 @@
           <h2>Quiz Result</h2>
           <p>Your score is {{ quizResult.score }}%</p>
           <button @click="goHome">Back to Home</button>
-          <!-- <button @click="retryQuiz">Attempt Again</button> -->
         </div>
       </div>
 
@@ -250,8 +249,11 @@ export default {
   computed: {
     ...mapState({
       userId: (state) => (state.user ? state.user._id : null),
-      user: (state) => state.user,
+      accountLevel: (state) => (state.user ? state.user.accountLevel : null),
     }),
+    isAdmin() {
+      return this.accountLevel === 1;
+    },
   },
   async created() {
     await this.fetchQuiz();
