@@ -196,7 +196,10 @@
       <div v-if="showAnswerReminderModal" class="modal-overlay">
         <div class="modal">
           <h2>Reminder</h2>
-          <p>Please choose an answer before moving to the next question.</p>
+          <p>
+            Please choose and submit your answer before moving to the next
+            question.
+          </p>
           <button @click="closeAnswerReminderModal">OK</button>
         </div>
       </div>
