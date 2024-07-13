@@ -18,3 +18,13 @@ exports.saveContact = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+exports.getAllContacts = async (req, res) => {
+  try {
+    const contacts = await Contact.find();
+    res.json(contacts);
+  } catch (err) {
+    console.error('Error fetching contacts:', err);
+    res.status(500).json({ message: err.message });
+  }
+};
