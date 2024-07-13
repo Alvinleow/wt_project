@@ -42,6 +42,8 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   name: "RegisterSection",
   data() {
@@ -53,8 +55,31 @@ export default {
     };
   },
   methods: {
-    handleRegister() {
-      this.$router.push("/home");
+    async handleRegister() {
+      if (this.password !== this.reenterPassword) {
+        alert("Passwords do not match!");
+        return;
+      }
+
+      const userData = {
+        email: this.email,
+        username: this.username,
+        password: this.password,
+        completedCourses: [],
+        accountLevel: 0,
+      };
+
+      try {
+        const response = await axios.post(
+          "http://localhost:8081/api/accounts",
+          userData
+        );
+        console.log("Account created:", response.data);
+        this.$router.push("/home");
+      } catch (error) {
+        console.error("Error creating account:", error);
+        alert("Failed to create account. Please try again.");
+      }
     },
   },
 };
