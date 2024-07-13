@@ -8,7 +8,11 @@
             <li
               v-for="(lesson, index) in lessons"
               :key="lesson._id"
-              @click="selectLesson(lesson)"
+              @click="selectLesson(lesson, index)"
+              :class="{
+                viewed: lesson.status === 'viewed',
+                'not-viewed': lesson.status === 'not viewed',
+              }"
             >
               Lesson {{ index + 1 }}: {{ lesson.title }}
             </li>
@@ -22,6 +26,32 @@
           <div v-if="selectedLesson">
             <h3>{{ selectedLesson.title }}</h3>
             <div v-html="selectedLesson.content"></div>
+          </div>
+          <div v-else class="empty-content-message">
+            <h2>Please select a lesson to view or edit its content.</h2>
+          </div>
+          <div class="lesson-navigation" v-if="selectedLesson">
+            <button
+              class="prev-button"
+              v-if="selectedLessonIndex > 0"
+              @click="previousLesson"
+            >
+              &lt; Previous Lesson
+            </button>
+            <button
+              class="next-button"
+              v-if="selectedLessonIndex < lessons.length - 1"
+              @click="nextLesson"
+            >
+              Next Lesson &gt;
+            </button>
+            <button
+              class="finish-button"
+              v-if="canFinishCourse"
+              @click="finishCourse"
+            >
+              Finish Course
+            </button>
           </div>
         </div>
       </div>
@@ -75,12 +105,18 @@ export default {
       showEditLessonModalWindow: false,
       newLessonTitle: "",
       selectedLesson: null,
+      selectedLessonIndex: -1,
       quill: null,
       courseId: this.$route.params.courseId, // Retrieve course ID from route params
     };
   },
   async created() {
     await this.fetchLessons();
+  },
+  computed: {
+    canFinishCourse() {
+      return this.lessons.every((lesson) => lesson.status === "viewed");
+    },
   },
   methods: {
     async fetchLessons() {
@@ -115,8 +151,9 @@ export default {
         }
       }
     },
-    selectLesson(lesson) {
+    selectLesson(lesson, index) {
       this.selectedLesson = lesson;
+      this.selectedLessonIndex = index;
     },
     showEditLessonModal() {
       this.showEditLessonModalWindow = true;
@@ -153,6 +190,35 @@ export default {
           console.error("Error saving lesson content:", error);
         }
       }
+    },
+    async nextLesson() {
+      if (this.selectedLessonIndex < this.lessons.length - 1) {
+        const nextLesson = this.lessons[this.selectedLessonIndex + 1];
+        if (this.selectedLesson.status !== "viewed") {
+          try {
+            await axios.put(
+              `http://localhost:8081/api/courses/${this.courseId}/lessons/${this.selectedLesson._id}`,
+              { status: "viewed" }
+            );
+            this.selectedLesson.status = "viewed";
+          } catch (error) {
+            console.error("Error updating lesson status:", error);
+          }
+        }
+        this.selectLesson(nextLesson, this.selectedLessonIndex + 1);
+      }
+    },
+    async previousLesson() {
+      if (this.selectedLessonIndex > 0) {
+        this.selectLesson(
+          this.lessons[this.selectedLessonIndex - 1],
+          this.selectedLessonIndex - 1
+        );
+      }
+    },
+    finishCourse() {
+      alert("Congratulations! You have finished the course.");
+      // Additional logic for finishing the course can be added here.
     },
   },
 };
@@ -194,6 +260,14 @@ export default {
   color: white;
 }
 
+.sidebar li.viewed {
+  background: #36a273;
+}
+
+.sidebar li.not-viewed {
+  background: #ff4d4d;
+}
+
 .content {
   flex: 8;
   padding: 20px;
@@ -201,6 +275,12 @@ export default {
   color: black;
   border-radius: 10px;
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.empty-content-message {
+  text-align: center;
+  margin-top: 50px;
+  color: #ccc;
 }
 
 .content button {
@@ -216,6 +296,36 @@ export default {
 }
 
 .content button:hover {
+  background-color: #36a273;
+}
+
+.lesson-navigation {
+  display: flex;
+  justify-content: space-between;
+}
+
+.prev-button {
+  background-color: #ff4d4d;
+}
+
+.prev-button:hover {
+  background-color: #ff1a1a;
+}
+
+.next-button {
+  background-color: #42b983;
+}
+
+.next-button:hover {
+  background-color: #36a273;
+}
+
+.finish-button {
+  background-color: #42b983;
+  margin-left: auto;
+}
+
+.finish-button:hover {
   background-color: #36a273;
 }
 
