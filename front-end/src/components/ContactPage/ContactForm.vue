@@ -1,51 +1,71 @@
 <template>
   <div class="contact-form">
-    <h2>Contact Us</h2>
     <form @submit.prevent="submitForm">
+      <h2>Contact Us</h2>
       <div class="form-group">
         <label for="name">Name:</label>
-        <input type="text" id="name" v-model="form.name" required />
+        <input type="text" id="name" v-model="name" required />
       </div>
       <div class="form-group">
-        <label for="email">Email Address:</label>
-        <input type="email" id="email" v-model="form.email" required />
+        <label for="email">Email:</label>
+        <input type="email" id="email" v-model="email" required />
       </div>
       <div class="form-group">
         <label for="subject">Subject:</label>
-        <input type="text" id="subject" v-model="form.subject" required />
+        <input type="text" id="subject" v-model="subject" required />
       </div>
       <div class="form-group">
         <label for="message">Message:</label>
-        <textarea id="message" v-model="form.message" required></textarea>
+        <textarea id="message" v-model="message" required></textarea>
       </div>
       <button type="submit" class="submit-btn">Submit</button>
     </form>
+    <div v-if="successMessage" class="success-message">
+      Form submitted successfully!
+    </div>
   </div>
 </template>
 
 <script>
+import axios from 'axios'; // Add this import
+
 export default {
-  name: "ContactForm",
   data() {
     return {
-      form: {
-        name: "",
-        email: "",
-        subject: "",
-        message: "",
-      },
+      name: '',
+      email: '',
+      subject: '',
+      message: '',
+      successMessage: false, // Add successMessage to data
     };
   },
   methods: {
-    submitForm() {
-      // Handle form submission (e.g., send data to backend)
-      console.log("Form submitted:", this.form);
-      alert("Thank you for contacting us!");
-      // Reset form
-      this.form.name = "";
-      this.form.email = "";
-      this.form.subject = "";
-      this.form.message = "";
+    async submitForm() {
+      console.log('Submitting form with data:', {
+        name: this.name,
+        email: this.email,
+        subject: this.subject,
+        message: this.message,
+      });
+      try {
+        const response = await axios.post('http://localhost:8081/api/contact', {
+          name: this.name,
+          email: this.email,
+          subject: this.subject,
+          message: this.message,
+        });
+        console.log('Form submitted successfully:', response.data);
+        this.successMessage = true; // Show success message
+        this.resetForm(); // Optional: Reset form fields after successful submission
+      } catch (error) {
+        console.error('Error submitting form:', error);
+      }
+    },
+    resetForm() {
+      this.name = '';
+      this.email = '';
+      this.subject = '';
+      this.message = '';
     },
   },
 };
@@ -109,5 +129,15 @@ export default {
 
 .submit-btn:hover {
   background-color: #36a273;
+}
+
+.success-message {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 5px;
+  text-align: center;
 }
 </style>
