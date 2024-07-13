@@ -45,7 +45,11 @@
             >
               Next Lesson &gt;
             </button>
-            <button class="finish-button" @click="finishCourse">
+            <button
+              class="finish-button"
+              v-if="selectedLessonIndex === lessons.length - 1"
+              @click="finishCourse"
+            >
               Finish Course
             </button>
           </div>
@@ -96,6 +100,7 @@ import axios from "axios";
 import NavBar from "../components/NavBar.vue";
 import Quill from "quill";
 import "quill/dist/quill.snow.css";
+import { mapState } from "vuex";
 
 export default {
   name: "LessonPage",
@@ -113,11 +118,17 @@ export default {
       selectedLessonIndex: -1,
       quill: null,
       finishMessage: "",
-      courseId: this.$route.params.courseId, // Retrieve course ID from route params
+      courseId: this.$route.params.courseId,
     };
+  },
+  computed: {
+    ...mapState({
+      userId: (state) => (state.user ? state.user._id : null),
+    }),
   },
   async created() {
     await this.fetchLessons();
+    await this.fetchUserProgress();
   },
   methods: {
     async fetchLessons() {
@@ -128,6 +139,25 @@ export default {
         this.lessons = response.data.lessons;
       } catch (error) {
         console.error("Error fetching lessons:", error);
+      }
+    },
+    async fetchUserProgress() {
+      try {
+        const response = await axios.get(
+          `http://localhost:8081/api/userProgress/${this.userId}/${this.courseId}`
+        );
+        if (response.data && response.data.lessonStatuses) {
+          this.lessons.forEach((lesson) => {
+            const progress = response.data.lessonStatuses.find(
+              (ls) => ls.lessonId === lesson._id
+            );
+            if (progress) {
+              lesson.status = progress.status;
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user progress:", error);
       }
     },
     showAddLessonModal() {
@@ -192,19 +222,27 @@ export default {
         }
       }
     },
+    async updateLessonStatus(lessonId, status) {
+      try {
+        await axios.put(`http://localhost:8081/api/userProgress`, {
+          userId: this.userId,
+          courseId: this.courseId,
+          lessonId,
+          status,
+        });
+        const lesson = this.lessons.find((lesson) => lesson._id === lessonId);
+        if (lesson) {
+          lesson.status = status;
+        }
+      } catch (error) {
+        console.error("Error updating lesson status:", error);
+      }
+    },
     async nextLesson() {
       if (this.selectedLessonIndex < this.lessons.length - 1) {
         const nextLesson = this.lessons[this.selectedLessonIndex + 1];
         if (this.selectedLesson.status !== "viewed") {
-          try {
-            await axios.put(
-              `http://localhost:8081/api/courses/${this.courseId}/lessons/${this.selectedLesson._id}`,
-              { status: "viewed" }
-            );
-            this.selectedLesson.status = "viewed";
-          } catch (error) {
-            console.error("Error updating lesson status:", error);
-          }
+          await this.updateLessonStatus(this.selectedLesson._id, "viewed");
         }
         this.selectLesson(nextLesson, this.selectedLessonIndex + 1);
       }
@@ -217,7 +255,21 @@ export default {
         );
       }
     },
-    finishCourse() {
+    async finishCourse() {
+      // Check if all previous lessons are viewed
+      for (let i = 0; i < this.selectedLessonIndex; i++) {
+        if (this.lessons[i].status !== "viewed") {
+          this.finishMessage = "You haven't completed all the lessons yet.";
+          this.showFinishModal = true;
+          return;
+        }
+      }
+
+      // Mark current lesson as viewed
+      if (this.selectedLesson.status !== "viewed") {
+        await this.updateLessonStatus(this.selectedLesson._id, "viewed");
+      }
+
       if (this.lessons.every((lesson) => lesson.status === "viewed")) {
         this.finishMessage =
           "Congratulations! You have completed all the lessons!";
@@ -270,7 +322,7 @@ export default {
 }
 
 .sidebar li.viewed {
-  background: #36a273;
+  background: #228b22; /* Dark green for viewed lessons */
 }
 
 .sidebar li.not-viewed {
@@ -311,6 +363,7 @@ export default {
 .lesson-navigation {
   display: flex;
   justify-content: space-between;
+  align-items: center; /* Ensures buttons are aligned in the middle */
 }
 
 .prev-button {
@@ -323,6 +376,7 @@ export default {
 
 .next-button {
   background-color: #42b983;
+  margin-left: auto;
 }
 
 .next-button:hover {

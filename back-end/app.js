@@ -33,6 +33,7 @@ const upload = multer({
 app.use("/api/accounts", require("./routes/account"));
 app.use("/api/contact", require("./routes/contact"));
 app.use("/api/courses", require("./routes/course"));
+app.use("/api/userProgress", require("./routes/userProgress"));
 
 const PORT = process.env.PORT || 8081;
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
