@@ -51,8 +51,36 @@
           <button class="save-btn" @click="saveChanges">Save Changes</button>
           <button class="cancel-btn" @click="cancelEdit">Cancel</button>
         </div>
+        <button class="delete-account-btn" @click="promptDeleteAccount">
+          Delete Account
+        </button>
       </div>
       <div v-else class="no-user">No user data available. Please log in.</div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="modal">
+      <div class="modal-content">
+        <span class="close" @click="closeDeleteModal">&times;</span>
+        <h2>Confirm Account Deletion</h2>
+        <p>Please enter your password to confirm account deletion.</p>
+        <input
+          type="password"
+          v-model="deletePassword"
+          placeholder="Enter your password"
+          class="password-input"
+        />
+        <span v-if="deleteError" class="error-message">{{ deleteError }}</span>
+        <button class="confirm-delete-btn" @click="deleteAccount">
+          Confirm Delete
+        </button>
+      </div>
+    </div>
+
+    <!-- Deletion Success Message -->
+    <div v-if="deletionSuccess" class="success-message">
+      <h2>Account Deleted Successfully!</h2>
+      <p>Redirecting to main page in {{ countdown }} seconds...</p>
     </div>
   </div>
 </template>
@@ -80,6 +108,11 @@ export default {
       editableUsername: "",
       newProfilePic: null,
       previewProfilePicUrl: null,
+      showDeleteModal: false,
+      deletePassword: "",
+      deleteError: "",
+      deletionSuccess: false,
+      countdown: 3,
     };
   },
   async created() {
@@ -122,11 +155,6 @@ export default {
           formData.append("profilePic", this.newProfilePic);
         }
 
-        // Log the form data
-        for (let pair of formData.entries()) {
-          console.log(pair[0] + ": " + pair[1]);
-        }
-
         const response = await axios.put(
           `http://localhost:8081/api/accounts/${this.userId}`,
           formData,
@@ -139,7 +167,7 @@ export default {
 
         this.$store.commit("SET_USER", response.data);
         this.isEditing = false;
-        this.previewProfilePicUrl = null; // Clear preview after saving
+        this.previewProfilePicUrl = null;
       } catch (error) {
         console.error("Error saving changes:", error);
         alert("Failed to save changes. Please try again.");
@@ -152,7 +180,6 @@ export default {
       if (file && (file.type === "image/jpeg" || file.type === "image/png")) {
         this.newProfilePic = file;
 
-        // Create a URL for the selected file to preview it
         const reader = new FileReader();
         reader.onload = (e) => {
           this.previewProfilePicUrl = e.target.result;
@@ -166,6 +193,58 @@ export default {
       if (this.isEditing) {
         this.$refs.fileInput.click();
       }
+    },
+    promptDeleteAccount() {
+      this.showDeleteModal = true;
+    },
+    closeDeleteModal() {
+      this.showDeleteModal = false;
+      this.deletePassword = "";
+      this.deleteError = "";
+    },
+    async deleteAccount() {
+      if (!this.deletePassword) {
+        this.deleteError = "Password is required.";
+        return;
+      }
+
+      try {
+        console.log("Verifying password...");
+        const verifyResponse = await axios.post(
+          `http://localhost:8081/api/accounts/${this.userId}/verify-password`,
+          {
+            password: this.deletePassword,
+          }
+        );
+        console.log("Password verified:", verifyResponse.data);
+
+        if (!verifyResponse.data.success) {
+          this.deleteError = "Incorrect password.";
+          return;
+        }
+
+        console.log("Deleting account...");
+        const deleteResponse = await axios.delete(
+          `http://localhost:8081/api/accounts/${this.userId}`
+        );
+        console.log("Account deleted:", deleteResponse.data);
+
+        this.deletionSuccess = true;
+        this.startCountdown();
+      } catch (error) {
+        console.error("Error deleting account:", error);
+        this.deleteError = "Failed to delete account. Please check your password.";
+      }
+    },
+    startCountdown() {
+      const interval = setInterval(() => {
+        if (this.countdown > 0) {
+          this.countdown--;
+        } else {
+          clearInterval(interval);
+          this.$router.push({ name: "MainPage" });
+        }
+      }, 1000);
     },
   },
 };
@@ -265,7 +344,9 @@ export default {
 
 .edit-profile-btn,
 .save-btn,
-.cancel-btn {
+.cancel-btn,
+.delete-account-btn,
+.confirm-delete-btn {
   display: block;
   width: auto;
   padding: 10px;
@@ -304,6 +385,22 @@ export default {
   background-color: #ff1a1a;
 }
 
+.delete-account-btn {
+  background-color: #ff4d4d;
+}
+
+.delete-account-btn:hover {
+  background-color: #ff1a1a;
+}
+
+.confirm-delete-btn {
+  background-color: #ff4d4d;
+}
+
+.confirm-delete-btn:hover {
+  background-color: #ff1a1a;
+}
+
 .loading {
   text-align: center;
   color: #42b983;
@@ -314,5 +411,60 @@ export default {
   text-align: center;
   color: #ff4d4d;
   font-size: 1.5rem;
+}
+
+/* Modal Styles */
+.modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: #000000;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 300px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  color: white;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.password-input {
+  width: 100%;
+  padding: 10px;
+  margin: 15px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+.success-message {
+  text-align: center;
+  color: white;
 }
 </style>

@@ -7,8 +7,8 @@
         @show-login="showLogin"
         @show-register="showRegister"
       />
-      <LoginSection v-if="showLoginForm" />
-      <RegisterSection v-if="showRegisterForm" />
+      <LoginSection v-if="showLoginForm" @show-register="showRegister" />
+      <RegisterSection v-if="showRegisterForm" @show-login="showLogin" />
     </div>
   </div>
 </template>

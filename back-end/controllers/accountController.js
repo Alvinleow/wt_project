@@ -41,7 +41,7 @@ exports.createAccount = async (req, res) => {
   const account = new Account({
     username,
     email,
-    password,
+    password, // No hashing here
     completedCourses,
     accountLevel,
     profilePicUrl:
@@ -119,15 +119,25 @@ exports.updateAccount = async (req, res) => {
 exports.deleteAccount = async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
-    if (!account) return res.status(404).json({ message: "Account not found" });
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
+    }
 
-    await account.remove();
+    await account.deleteOne();
     res.json({ message: "Account deleted" });
   } catch (err) {
+    console.error("Error deleting account:", err);
     res.status(500).json({ message: err.message });
   }
 };
 
+// Verify password
+exports.verifyPassword = async (req, res) => {
+  const { password } = req.body;
+
+  try {
+    const account = await Account.findById(req.params.id);
+=======
 exports.enrollInCourse = async (req, res) => {
   try {
     const userId = new ObjectId(req.params.userId);
@@ -159,7 +169,15 @@ exports.unenrollFromCourse = async (req, res) => {
     if (!account) {
       return res.status(404).json({ message: "Account not found" });
     }
+    if (account.password !== password) {
+      return res.status(400).json({ message: "Incorrect password" });
+    }
 
+    res.json({ success: true, message: "Password verified" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
     account.enrolledCourses = account.enrolledCourses.filter(
       (id) => !id.equals(courseId)
     );
