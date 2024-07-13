@@ -26,4 +26,8 @@ router.put(
 // Delete an account
 router.delete("/:id", accountController.deleteAccount);
 
+router.put("/enroll/:userId", accountController.enrollInCourse);
+
+router.put("/unenroll/:userId", accountController.unenrollFromCourse);
+
 module.exports = router;
