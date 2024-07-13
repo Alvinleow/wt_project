@@ -3,59 +3,64 @@
     <NavBar />
     <div class="main-content">
       <div v-if="loading" class="loading">Loading...</div>
-      <div v-else-if="user" class="profile-container">
-        <div class="profile-header">
-          <div class="profile-pic-wrapper">
-            <img
-              :src="previewProfilePicUrl || user.profilePicUrl"
-              alt="User Icon"
-              class="user-icon"
-              @click="triggerFileInput"
-            />
-            <span v-if="isEditing" class="edit-icon">&#9998;</span>
-            <input
-              type="file"
-              ref="fileInput"
-              style="display: none"
-              @change="handleFileChange"
-              accept="image/png, image/jpeg"
-            />
+      <div v-else>
+        <div v-if="user && !deletionSuccess" class="profile-container">
+          <div class="profile-header">
+            <div class="profile-pic-wrapper">
+              <img
+                :src="previewProfilePicUrl || user.profilePicUrl"
+                alt="User Icon"
+                class="user-icon"
+                @click="triggerFileInput"
+              />
+              <span v-if="isEditing" class="edit-icon">&#9998;</span>
+              <input
+                type="file"
+                ref="fileInput"
+                style="display: none"
+                @change="handleFileChange"
+                accept="image/png, image/jpeg"
+              />
+            </div>
+            <div class="profile-info">
+              <h2 v-if="!isEditing">{{ user.username }}</h2>
+              <input
+                v-else
+                v-model="editableUsername"
+                type="text"
+                class="editable-username"
+              />
+              <p>{{ user.email }}</p>
+            </div>
           </div>
-          <div class="profile-info">
-            <h2 v-if="!isEditing">{{ user.username }}</h2>
-            <input
-              v-else
-              v-model="editableUsername"
-              type="text"
-              class="editable-username"
-            />
-            <p>{{ user.email }}</p>
+          <div class="completed-courses">
+            <h3>Completed Courses</h3>
+            <ul>
+              <li v-for="course in user.completedCourses" :key="course.id">
+                {{ course.title }}
+              </li>
+            </ul>
           </div>
+          <button
+            v-if="!isEditing"
+            class="edit-profile-btn"
+            @click="enterEditMode"
+          >
+            Edit Profile
+          </button>
+          <div v-else class="edit-buttons">
+            <button class="save-btn" @click="saveChanges">Save Changes</button>
+            <button class="cancel-btn" @click="cancelEdit">Cancel</button>
+          </div>
+          <button class="delete-account-btn" @click="promptDeleteAccount">
+            Delete Account
+          </button>
         </div>
-        <div class="completed-courses">
-          <h3>Completed Courses</h3>
-          <ul>
-            <li v-for="course in user.completedCourses" :key="course.id">
-              {{ course.title }}
-            </li>
-          </ul>
+        <div v-if="deletionSuccess" class="success-message">
+          <h2>Account Deleted Successfully!</h2>
+          <p>Exiting in {{ countdown }} seconds...</p>
         </div>
-        <button
-          v-if="!isEditing"
-          class="edit-profile-btn"
-          @click="enterEditMode"
-        >
-          Edit Profile
-        </button>
-        <div v-else class="edit-buttons">
-          <button class="save-btn" @click="saveChanges">Save Changes</button>
-          <button class="cancel-btn" @click="cancelEdit">Cancel</button>
-        </div>
-        <button class="delete-account-btn" @click="promptDeleteAccount">
-          Delete Account
-        </button>
       </div>
-      <div v-else class="no-user">No user data available. Please log in.</div>
     </div>
 
     <!-- Delete Confirmation Modal -->
@@ -75,12 +80,6 @@
           Confirm Delete
         </button>
       </div>
-    </div>
-
-    <!-- Deletion Success Message -->
-    <div v-if="deletionSuccess" class="success-message">
-      <h2>Account Deleted Successfully!</h2>
-      <p>Redirecting to main page in {{ countdown }} seconds...</p>
     </div>
   </div>
 </template>
@@ -229,7 +228,11 @@ export default {
         );
         console.log("Account deleted:", deleteResponse.data);
 
+        // Account deletion successful, update UI
         this.deletionSuccess = true;
+        this.showDeleteModal = false; // Close the delete modal
+
+        // Optionally, start countdown or redirect user
         this.startCountdown();
       } catch (error) {
         console.error("Error deleting account:", error);
