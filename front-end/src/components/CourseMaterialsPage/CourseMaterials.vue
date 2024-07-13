@@ -75,21 +75,64 @@
         <p>{{ selectedCourse.description }}</p>
         <p>Total Lessons: {{ selectedCourse.totalOfLessons }}</p>
         <p>Enrollments: {{ selectedCourse.enrollment }}</p>
-        <button
-          v-if="!isEnrolledInCourse(selectedCourse._id)"
-          @click="enrollInCourse"
-        >
-          Enroll Course
-        </button>
-        <div v-else>
-          <button class="view-lessons-btn" @click="navigateToLessons">
-            View Lessons
-          </button>
-          <button class="unenroll-btn" @click="confirmUnenroll">
-            Unenroll Course
-          </button>
+        <div class="modal-buttons">
+          <div>
+            <button
+              v-if="!isEnrolledInCourse(selectedCourse._id)"
+              @click="enrollInCourse"
+            >
+              Enroll Course
+            </button>
+            <div v-else>
+              <button class="view-lessons-btn" @click="navigateToLessons">
+                View Lessons
+              </button>
+              <button class="unenroll-btn" @click="confirmUnenroll">
+                Unenroll Course
+              </button>
+            </div>
+          </div>
+          <div>
+            <button @click="showEditCourseForm">Edit Course</button>
+            <button @click="confirmDeleteCourse" class="delete-button">
+              Delete Course
+            </button>
+          </div>
+          <div>
+            <button @click="closeCourseModal">Close</button>
+          </div>
         </div>
-        <button @click="closeCourseModal">Close</button>
+      </div>
+    </div>
+
+    <!-- Edit Course Form -->
+    <div v-if="showEditCourseFormWindow" class="course-modal-overlay">
+      <div class="course-modal">
+        <h2>Edit Course</h2>
+        <form @submit.prevent="editCourse">
+          <div>
+            <label for="editTitle">Title:</label>
+            <input type="text" id="editTitle" v-model="selectedCourse.title" />
+          </div>
+          <div>
+            <label for="editDescription">Description:</label>
+            <textarea
+              id="editDescription"
+              v-model="selectedCourse.description"
+            ></textarea>
+          </div>
+          <button type="submit">Save Changes</button>
+          <button type="button" @click="closeEditCourseForm">Cancel</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete Course Confirmation Modal -->
+    <div v-if="showDeleteCourseModalWindow" class="course-modal-overlay">
+      <div class="course-modal">
+        <h2>Are you sure you want to delete this course?</h2>
+        <button @click="deleteCourse">Yes</button>
+        <button type="button" @click="closeDeleteCourseModal">No</button>
       </div>
     </div>
 
@@ -130,6 +173,8 @@ export default {
       showCourseModal: false,
       selectedCourse: null,
       showConfirmUnenrollModal: false,
+      showEditCourseFormWindow: false,
+      showDeleteCourseModalWindow: false,
     };
   },
   computed: {
@@ -144,9 +189,9 @@ export default {
   methods: {
     fetchCourses() {
       axios
-        .get("http://localhost:8081/api/courses")
+        .get("http://localhost:8081/api/courses?sort=-createdAt")
         .then((response) => {
-          this.courses = response.data;
+          this.courses = response.data.reverse();
           this.filteredCourses = this.courses;
         })
         .catch((error) => {
@@ -269,6 +314,50 @@ export default {
         name: "Lessons",
         params: { courseId: this.selectedCourse._id },
       });
+    },
+    showEditCourseForm() {
+      this.showEditCourseFormWindow = true;
+    },
+    closeEditCourseForm() {
+      this.showEditCourseFormWindow = false;
+    },
+    async editCourse() {
+      try {
+        const response = await axios.put(
+          `http://localhost:8081/api/courses/${this.selectedCourse._id}`,
+          {
+            title: this.selectedCourse.title,
+            description: this.selectedCourse.description,
+          }
+        );
+        this.selectedCourse = response.data;
+        this.closeEditCourseForm();
+      } catch (error) {
+        console.error("Error editing course:", error);
+      }
+    },
+    confirmDeleteCourse() {
+      this.showDeleteCourseModalWindow = true;
+    },
+    closeDeleteCourseModal() {
+      this.showDeleteCourseModalWindow = false;
+    },
+    async deleteCourse() {
+      try {
+        await axios.delete(
+          `http://localhost:8081/api/courses/${this.selectedCourse._id}`
+        );
+        this.courses = this.courses.filter(
+          (course) => course._id !== this.selectedCourse._id
+        );
+        this.filteredCourses = this.filteredCourses.filter(
+          (course) => course._id !== this.selectedCourse._id
+        );
+        this.closeDeleteCourseModal();
+        this.closeCourseModal();
+      } catch (error) {
+        console.error("Error deleting course:", error);
+      }
     },
   },
 };
@@ -467,5 +556,26 @@ export default {
 
 .course-modal button:last-of-type:hover {
   background-color: #ff1a1a;
+}
+
+.delete-button {
+  background-color: #ff4d4d;
+  color: white;
+}
+
+.delete-button:hover {
+  background-color: #ff1a1a;
+}
+
+.modal-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-buttons > div {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 }
 </style>
