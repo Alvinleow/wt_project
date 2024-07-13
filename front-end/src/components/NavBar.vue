@@ -36,8 +36,15 @@
 </template>
 
 <script>
+import { mapState, mapActions } from "vuex";
+
 export default {
   name: "NavBar",
+  computed: {
+    ...mapState({
+      userId: (state) => (state.user ? state.user._id : null),
+    }),
+  },
   data() {
     return {
       menuVisible: false,
@@ -48,10 +55,12 @@ export default {
       this.menuVisible = !this.menuVisible;
     },
     navigateToProfile() {
-      this.$router.push("/profile");
+      this.$router.push(`/profile/${this.userId}`);
       this.menuVisible = false;
     },
+    ...mapActions(["logout"]),
     logOut() {
+      this.logout(); // Call the Vuex action to log out
       this.$router.push("/");
       this.menuVisible = false;
     },
