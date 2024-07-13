@@ -23,13 +23,14 @@ const routes = [
   },
   {
     path: "/contact",
-    name: "Contact",
+    name: "ContactPage",
     component: ContactPage,
   },
   {
-    path: "/profile",
-    name: "Profile",
+    path: "/profile/:id",
+    name: "ProfilePage",
     component: ProfilePage,
+    props: true,
   },
 ];
 

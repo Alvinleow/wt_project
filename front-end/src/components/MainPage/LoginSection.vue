@@ -22,6 +22,8 @@
 </template>
 
 <script>
+import { mapActions } from "vuex";
+
 export default {
   name: "LoginSection",
   data() {
@@ -31,8 +33,20 @@ export default {
     };
   },
   methods: {
-    handleLogin() {
-      this.$router.push("/home");
+    ...mapActions(["login"]),
+    async handleLogin() {
+      const loginData = {
+        email: this.email,
+        password: this.password,
+      };
+
+      try {
+        await this.login(loginData);
+        this.$router.push("/home");
+      } catch (error) {
+        console.error("Error logging in:", error);
+        alert("Failed to login. Please check your email and password.");
+      }
     },
   },
 };
