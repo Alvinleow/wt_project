@@ -92,7 +92,7 @@
               </button>
             </div>
           </div>
-          <div>
+          <div v-if="isAdmin">
             <button @click="showEditCourseForm">Edit Course</button>
             <button @click="confirmDeleteCourse" class="delete-button">
               Delete Course
@@ -182,6 +182,9 @@ export default {
       userId: (state) => (state.user ? state.user._id : null),
       user: (state) => state.user,
     }),
+    isAdmin() {
+      return this.user && this.user.accountLevel === 1;
+    },
   },
   mounted() {
     this.fetchCourses();

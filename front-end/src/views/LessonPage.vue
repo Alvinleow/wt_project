@@ -19,7 +19,7 @@
           </ul>
         </div>
         <div class="content">
-          <div class="action-buttons">
+          <div class="action-buttons" v-if="isAdmin">
             <button @click="showAddLessonModal">Add New Lesson</button>
             <button v-if="selectedLesson" @click="showEditLessonModal">
               Edit Lesson Content
@@ -146,7 +146,11 @@ export default {
   computed: {
     ...mapState({
       userId: (state) => (state.user ? state.user._id : null),
+      accountLevel: (state) => (state.user ? state.user.accountLevel : null),
     }),
+    isAdmin() {
+      return this.accountLevel === 1;
+    },
   },
   async created() {
     await this.fetchLessons();
@@ -253,12 +257,26 @@ export default {
     async deleteLesson() {
       if (this.selectedLesson) {
         try {
-          const response = await axios.delete(
+          const deleteResponse = await axios.delete(
             `http://localhost:8081/api/courses/${this.courseId}/lessons/${this.selectedLesson._id}`
           );
-          this.lessons = response.data.lessons;
-          this.selectedLesson = null;
-          this.selectedLessonIndex = -1;
+          console.log("Delete response:", deleteResponse.data);
+
+          this.lessons = this.lessons.filter(
+            (lesson) => lesson._id !== this.selectedLesson._id
+          );
+
+          console.log(`Updated number of lessons: ${this.lessons.length}`);
+
+          const updateResponse = await axios.put(
+            `http://localhost:8081/api/courses/${this.courseId}`,
+            {
+              totalOfLessons: this.lessons.length,
+            }
+          );
+
+          console.log("Update response:", updateResponse.data);
+
           this.closeDeleteLessonModal();
         } catch (error) {
           console.error("Error deleting lesson:", error);

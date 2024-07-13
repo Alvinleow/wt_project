@@ -20,7 +20,9 @@ router.put("/:id", upload.single("thumbnail"), courseController.updateCourse);
 router.delete("/:id", courseController.deleteCourse);
 
 router.post("/:courseId/lessons", courseController.addLesson);
+
 router.put("/:courseId/lessons/:lessonId", courseController.updateLesson);
+
 router.delete("/:courseId/lessons/:lessonId", courseController.deleteLesson);
 
 module.exports = router;

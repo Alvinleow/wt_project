@@ -1,21 +1,23 @@
 const mongoose = require("mongoose");
 const Course = require("../models/course");
-const quizController = require("./quizController");
 const { storage } = require("../config/firebase");
+const UserProgress = require("../models/userProgress");
 
-async function saveCourse(course, req, res) {
-  course.title = req.body.title || course.title;
-  course.description = req.body.description || course.description;
+const saveCourse = async (course, req, res) => {
+  const { title, description, totalOfLessons } = req.body;
+
+  if (title) course.title = title;
+  if (description) course.description = description;
+  if (totalOfLessons !== undefined) course.totalOfLessons = totalOfLessons;
 
   try {
-    const savedCourse = await course.save();
-    await quizController.generateQuizForCourse(savedCourse._id);
-    res.json(savedCourse);
+    await course.save();
+    res.json(course);
   } catch (err) {
     console.error("Error saving course:", err);
-    res.status(400).json({ message: err.message });
+    res.status(500).json({ message: "Failed to save course" });
   }
-}
+};
 
 exports.getAllCourses = async (req, res) => {
   try {
@@ -182,21 +184,45 @@ exports.deleteLesson = async (req, res) => {
   const { courseId, lessonId } = req.params;
 
   try {
+    console.log(
+      `Deleting lesson with ID: ${lessonId} from course with ID: ${courseId}`
+    );
+
     const course = await Course.findById(courseId);
+
     if (!course) {
+      console.error(`Course with ID: ${courseId} not found`);
       return res.status(404).json({ message: "Course not found" });
     }
+
+    console.log(`Course found: ${course.title}`);
 
     course.lessons = course.lessons.filter(
       (lesson) => lesson._id.toString() !== lessonId
     );
+
+    console.log(`Updated lessons count: ${course.lessons.length}`);
+
+    course.totalOfLessons = course.lessons.length;
+
     await course.save();
 
-    res.json({ lessons: course.lessons });
+    // Remove the lesson statuses for the deleted lesson
+    await UserProgress.updateMany(
+      { courseId: new mongoose.Types.ObjectId(courseId) },
+      {
+        $pull: {
+          lessonStatuses: { lessonId: new mongoose.Types.ObjectId(lessonId) },
+        },
+      }
+    );
+
+    res.json({
+      message: "Lesson deleted successfully",
+      lessons: course.lessons,
+    });
   } catch (error) {
     console.error("Error deleting lesson:", error);
-    res
-      .status(500)
-      .json({ message: "Error deleting lesson", error: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
