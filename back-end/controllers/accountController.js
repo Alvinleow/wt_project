@@ -126,6 +126,67 @@ exports.deleteAccount = async (req, res) => {
     await account.deleteOne();
     res.json({ message: "Account deleted" });
   } catch (err) {
+    console.error("Error deleting account:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Verify password
+exports.verifyPassword = async (req, res) => {
+  const { password } = req.body;
+
+  try {
+    const account = await Account.findById(req.params.id);
+
+exports.enrollInCourse = async (req, res) => {
+  try {
+    const userId = new ObjectId(req.params.userId);
+    const courseId = new ObjectId(req.body.courseId);
+
+    const account = await Account.findById(userId);
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    if (!account.enrolledCourses.includes(courseId)) {
+      account.enrolledCourses.push(courseId);
+    }
+
+    await account.save();
+    res.json({ message: "Enrolled in course", account });
+  } catch (err) {
+    console.error("Error enrolling in course:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.unenrollFromCourse = async (req, res) => {
+  try {
+    const userId = new ObjectId(req.params.userId);
+    const courseId = new ObjectId(req.body.courseId);
+
+    const account = await Account.findById(userId);
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    account.enrolledCourses = account.enrolledCourses.filter(
+      (id) => !id.equals(courseId)
+    );
+    await account.save();
+    res.json({ message: "Unenrolled from course", account });
+  } catch (err) {
+    console.error("Error unenrolling from course:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+    if (account.password !== password) {
+      return res.status(400).json({ message: "Incorrect password" });
+    }
+
+    res.json({ success: true, message: "Password verified" });
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
