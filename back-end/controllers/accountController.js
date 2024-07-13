@@ -13,7 +13,6 @@ async function saveAccount(account, req, res) {
   }
 }
 
-// Get all accounts
 exports.getAllAccounts = async (req, res) => {
   try {
     console.log("Fetching all accounts");
@@ -24,7 +23,6 @@ exports.getAllAccounts = async (req, res) => {
   }
 };
 
-// Get a single account by _id
 exports.getAccountByID = async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
@@ -35,7 +33,6 @@ exports.getAccountByID = async (req, res) => {
   }
 };
 
-// Register account
 exports.createAccount = async (req, res) => {
   const { username, email, password, completedCourses, accountLevel } =
     req.body;
@@ -60,7 +57,6 @@ exports.createAccount = async (req, res) => {
   }
 };
 
-// Login
 exports.loginAccount = async (req, res) => {
   const { email, password } = req.body;
 
@@ -80,17 +76,14 @@ exports.loginAccount = async (req, res) => {
   }
 };
 
-// Update account
 exports.updateAccount = async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
     if (!account) return res.status(404).json({ message: "Account not found" });
 
-    // Log incoming form data
     console.log("Received form data:", req.body);
     console.log("Received file:", req.file);
 
-    // Update the account's profile picture if a new file is provided
     if (req.file) {
       const blob = storage.file(`profile_pics/${req.file.originalname}`);
       const blobStream = blob.createWriteStream({
@@ -122,7 +115,6 @@ exports.updateAccount = async (req, res) => {
   }
 };
 
-// Delete account
 exports.deleteAccount = async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
@@ -131,6 +123,24 @@ exports.deleteAccount = async (req, res) => {
     await account.remove();
     res.json({ message: "Account deleted" });
   } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.enrollInCourse = async (req, res) => {
+  try {
+    const account = await Account.findById(req.params.id);
+    if (!account) return res.status(404).json({ message: "Account not found" });
+
+    const { courseId } = req.body;
+    if (!account.enrolledCourses.includes(courseId)) {
+      account.enrolledCourses.push(courseId);
+      await account.save();
+    }
+
+    res.json(account);
+  } catch (err) {
+    console.error("Error enrolling in course:", err);
     res.status(500).json({ message: err.message });
   }
 };
