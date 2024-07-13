@@ -1,5 +1,8 @@
+const bcrypt = require('bcrypt');
 const Account = require("../models/account");
 const { storage } = require("../config/firebase");
+
+const saltRounds = 10; // Number of salt rounds for bcrypt
 
 async function saveAccount(account, req, res) {
   account.username = req.body.username || account.username;
@@ -37,20 +40,20 @@ exports.getAccountByID = async (req, res) => {
 
 // Register account
 exports.createAccount = async (req, res) => {
-  const { username, email, password, completedCourses, accountLevel } =
-    req.body;
-
-  const account = new Account({
-    username,
-    email,
-    password, // No hashing here
-    completedCourses,
-    accountLevel,
-    profilePicUrl:
-      "https://img.icons8.com/ios-filled/100/ffffff/user-male-circle.png",
-  });
+  const { username, email, password, completedCourses, accountLevel } = req.body;
 
   try {
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const account = new Account({
+      username,
+      email,
+      password: hashedPassword,
+      completedCourses,
+      accountLevel,
+      profilePicUrl:
+        "https://img.icons8.com/ios-filled/100/ffffff/user-male-circle.png",
+    });
+
     console.log("Creating a new account:", account);
     const newAccount = await account.save();
     res.status(201).json(newAccount);
@@ -70,7 +73,8 @@ exports.loginAccount = async (req, res) => {
       return res.status(404).json({ message: "Account not found" });
     }
 
-    if (account.password !== password) {
+    const isMatch = await bcrypt.compare(password, account.password);
+    if (!isMatch) {
       return res.status(400).json({ message: "Incorrect password" });
     }
 
@@ -86,11 +90,9 @@ exports.updateAccount = async (req, res) => {
     const account = await Account.findById(req.params.id);
     if (!account) return res.status(404).json({ message: "Account not found" });
 
-    // Log incoming form data
     console.log("Received form data:", req.body);
     console.log("Received file:", req.file);
 
-    // Update the account's profile picture if a new file is provided
     if (req.file) {
       const blob = storage.file(`profile_pics/${req.file.originalname}`);
       const blobStream = blob.createWriteStream({
@@ -105,9 +107,7 @@ exports.updateAccount = async (req, res) => {
       });
 
       blobStream.on("finish", async () => {
-        const profilePicUrl = `https://firebasestorage.googleapis.com/v0/b/${
-          storage.name
-        }/o/${encodeURIComponent(blob.name)}?alt=media`;
+        const profilePicUrl = `https://firebasestorage.googleapis.com/v0/b/${storage.name}/o/${encodeURIComponent(blob.name)}?alt=media`;
         account.profilePicUrl = profilePicUrl;
         await saveAccount(account, req, res);
       });
@@ -145,7 +145,8 @@ exports.verifyPassword = async (req, res) => {
       return res.status(404).json({ message: "Account not found" });
     }
 
-    if (account.password !== password) {
+    const isMatch = await bcrypt.compare(password, account.password);
+    if (!isMatch) {
       return res.status(400).json({ message: "Incorrect password" });
     }
 
