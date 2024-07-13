@@ -1,5 +1,6 @@
 const Quiz = require("../models/quiz");
 const Account = require("../models/account");
+const Course = require("../models/course");
 
 // Get all quizzes
 exports.getAllQuizzes = async (req, res) => {
@@ -69,28 +70,20 @@ exports.generateQuizForCourse = async (courseId) => {
 };
 
 exports.addQuiz = async (req, res) => {
-  const { courseId } = req.body;
-
-  if (!courseId) {
-    return res.status(400).json({ message: "Course ID is required" });
-  }
-
   try {
-    const course = await Course.findById(courseId);
-    if (!course) {
-      return res.status(404).json({ message: "Course not found" });
-    }
+    const course = await Course.findById(req.params.courseId);
+    if (!course) return res.status(404).json({ message: "Course not found" });
 
-    const quiz = new Quiz({
-      quizId: courseId,
-      courseId,
+    const newQuiz = new Quiz({
+      quizId: course._id,
+      courseId: course._id,
       questions: [],
     });
 
-    await quiz.save();
-    res.status(201).json(quiz);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    const savedQuiz = await newQuiz.save();
+    res.status(201).json(savedQuiz);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 

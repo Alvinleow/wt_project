@@ -4,11 +4,12 @@
       <NavBar />
       <div class="content">
         <div class="sidebar">
-          <ul v-if="quiz && quiz.questions && quiz.questions.length > 0">
+          <ul v-if="quiz?.questions?.length > 0">
             <li
               v-for="(question, index) in quiz.questions"
               :key="question._id"
               :class="{ selected: selectedQuestionIndex === index }"
+              @click="selectQuestion(question, index)"
             >
               Question {{ index + 1 }}
             </li>
@@ -75,14 +76,14 @@
               Previous
             </button>
             <button
-              v-if="selectedQuestionIndex < quiz.questions.length - 1"
+              v-if="selectedQuestionIndex < quiz?.questions?.length - 1"
               @click="nextQuestion"
               class="next-button"
             >
               Next
             </button>
             <button
-              v-if="selectedQuestionIndex === quiz.questions.length - 1"
+              v-if="selectedQuestionIndex === quiz?.questions?.length - 1"
               @click="checkBeforeFinish"
               class="next-button"
             >
@@ -188,7 +189,7 @@
           <h2>Quiz Result</h2>
           <p>Your score is {{ quizResult.score }}%</p>
           <button @click="goHome">Back to Home</button>
-          <button @click="retryQuiz">Attempt Again</button>
+          <!-- <button @click="retryQuiz">Attempt Again</button> -->
         </div>
       </div>
 
@@ -262,12 +263,9 @@ export default {
         const response = await axios.get(
           `http://localhost:8081/api/quizzes/${quizId}`
         );
+        console.log(response.data);
         this.quiz = response.data || { questions: [] };
-        if (
-          this.quiz &&
-          this.quiz.questions &&
-          this.quiz.questions.length > 0
-        ) {
+        if (this.quiz?.questions?.length > 0) {
           this.selectQuestion(this.quiz.questions[0], 0);
         }
       } catch (error) {
@@ -286,6 +284,7 @@ export default {
         this.selectedAnswer = savedAnswer ? savedAnswer.answer : "";
         this.showCorrectAnswer = false;
         this.answerSubmitted = savedAnswer ? true : false;
+        console.log("Question selected:", this.selectedQuestion);
       }
     },
     showAddQuestionModal() {
@@ -365,7 +364,7 @@ export default {
           );
           this.quiz.questions.splice(updatedQuestionIndex, 1, response.data);
           this.closeEditQuestionModal();
-          this.fetchQuiz();
+          this.selectedQuestion = response.data; // Update selected question
         } catch (error) {
           console.error("Error editing question:", error);
         }
@@ -382,8 +381,13 @@ export default {
         await axios.delete(
           `http://localhost:8081/api/quizzes/${this.quizId}/questions/${this.selectedQuestion._id}`
         );
+        const updatedQuestionIndex = this.quiz.questions.findIndex(
+          (question) => question._id === this.selectedQuestion._id
+        );
+        this.quiz.questions.splice(updatedQuestionIndex, 1);
+        this.selectedQuestion = null;
+        this.selectedQuestionIndex = -1;
         this.closeDeleteQuestionModal();
-        this.fetchQuiz();
       } catch (error) {
         console.error("Error deleting question:", error);
       }
@@ -451,7 +455,7 @@ export default {
     },
     nextQuestion() {
       if (this.answerSubmitted) {
-        if (this.selectedQuestionIndex < this.quiz.questions.length - 1) {
+        if (this.selectedQuestionIndex < this.quiz?.questions?.length - 1) {
           this.selectQuestion(
             this.quiz.questions[this.selectedQuestionIndex + 1],
             this.selectedQuestionIndex + 1
@@ -509,6 +513,7 @@ export default {
   margin-bottom: 10px;
   border-radius: 5px;
   color: white;
+  cursor: pointer;
 }
 
 .sidebar li.selected {

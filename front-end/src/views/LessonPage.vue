@@ -422,12 +422,12 @@ export default {
 }
 
 .delete-button {
-  background-color: #ff4d4d;
-  margin-left: 10px;
+  background-color: #ff4d4d !important;
+  margin-left: 0px;
 }
 
 .delete-button:hover {
-  background-color: #ff1a1a;
+  background-color: #ff1a1a !important;
 }
 
 .lesson-navigation {
