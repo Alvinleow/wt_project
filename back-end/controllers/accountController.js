@@ -1,5 +1,6 @@
 const Account = require("../models/account");
 const { storage } = require("../config/firebase");
+const { ObjectId } = require("mongoose").Types;
 
 async function saveAccount(account, req, res) {
   account.username = req.body.username || account.username;
@@ -13,7 +14,6 @@ async function saveAccount(account, req, res) {
   }
 }
 
-// Get all accounts
 exports.getAllAccounts = async (req, res) => {
   try {
     console.log("Fetching all accounts");
@@ -24,7 +24,6 @@ exports.getAllAccounts = async (req, res) => {
   }
 };
 
-// Get a single account by _id
 exports.getAccountByID = async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
@@ -35,7 +34,6 @@ exports.getAccountByID = async (req, res) => {
   }
 };
 
-// Register account
 exports.createAccount = async (req, res) => {
   const { username, email, password, completedCourses, accountLevel } =
     req.body;
@@ -60,7 +58,6 @@ exports.createAccount = async (req, res) => {
   }
 };
 
-// Login
 exports.loginAccount = async (req, res) => {
   const { email, password } = req.body;
 
@@ -80,17 +77,14 @@ exports.loginAccount = async (req, res) => {
   }
 };
 
-// Update account
 exports.updateAccount = async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
     if (!account) return res.status(404).json({ message: "Account not found" });
 
-    // Log incoming form data
     console.log("Received form data:", req.body);
     console.log("Received file:", req.file);
 
-    // Update the account's profile picture if a new file is provided
     if (req.file) {
       const blob = storage.file(`profile_pics/${req.file.originalname}`);
       const blobStream = blob.createWriteStream({
@@ -122,7 +116,6 @@ exports.updateAccount = async (req, res) => {
   }
 };
 
-// Delete account
 exports.deleteAccount = async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
@@ -132,29 +125,6 @@ exports.deleteAccount = async (req, res) => {
 
     await account.deleteOne();
     res.json({ message: "Account deleted" });
-  } catch (err) {
-    console.error("Error deleting account:", err);
-    res.status(500).json({ message: err.message });
-  }
-};
-
-
-
-// Verify password
-exports.verifyPassword = async (req, res) => {
-  const { password } = req.body;
-
-  try {
-    const account = await Account.findById(req.params.id);
-    if (!account) {
-      return res.status(404).json({ message: "Account not found" });
-    }
-
-    if (account.password !== password) {
-      return res.status(400).json({ message: "Incorrect password" });
-    }
-
-    res.json({ success: true, message: "Password verified" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

@@ -26,7 +26,4 @@ router.put(
 // Delete an account
 router.delete("/:id", accountController.deleteAccount);
 
-// Verify password
-router.post("/:id/verify-password", accountController.verifyPassword);
-
 module.exports = router;
