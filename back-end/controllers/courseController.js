@@ -174,3 +174,26 @@ exports.updateLesson = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+exports.deleteLesson = async (req, res) => {
+  const { courseId, lessonId } = req.params;
+
+  try {
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    course.lessons = course.lessons.filter(
+      (lesson) => lesson._id.toString() !== lessonId
+    );
+    await course.save();
+
+    res.json({ lessons: course.lessons });
+  } catch (error) {
+    console.error("Error deleting lesson:", error);
+    res
+      .status(500)
+      .json({ message: "Error deleting lesson", error: error.message });
+  }
+};

@@ -234,6 +234,7 @@ export default {
           }
         );
         this.user.enrolledCourses.push(this.selectedCourse._id);
+        this.selectedCourse.enrollment += 1;
         this.closeCourseModal();
       } catch (error) {
         console.error("Error enrolling in course:", error);
@@ -256,6 +257,7 @@ export default {
         this.user.enrolledCourses = this.user.enrolledCourses.filter(
           (id) => id !== this.selectedCourse._id
         );
+        this.selectedCourse.enrollment -= 1;
         this.closeUnenrollModal();
         this.closeCourseModal();
       } catch (error) {

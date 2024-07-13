@@ -31,6 +31,25 @@ exports.getQuizById = async (req, res) => {
   }
 };
 
+exports.getQuizByCourseId = async (req, res) => {
+  const { courseId } = req.params;
+
+  try {
+    const quiz = await Quiz.findOne({ courseId: courseId });
+
+    if (!quiz) {
+      return res
+        .status(404)
+        .json({ message: "Quiz not found for this course" });
+    }
+
+    res.status(200).json({ quizId: quiz._id });
+  } catch (error) {
+    console.error("Error fetching quiz by course ID:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // Auto-generate quiz for a course if it doesn't exist
 exports.generateQuizForCourse = async (courseId) => {
   try {
@@ -150,7 +169,7 @@ exports.deleteQuestion = async (req, res) => {
       return res.status(404).json({ message: "Question not found" });
     }
 
-    question.remove();
+    await quiz.questions.id(questionId).deleteOne();
     await quiz.save();
     res.status(200).json({ message: "Question deleted successfully" });
   } catch (err) {
