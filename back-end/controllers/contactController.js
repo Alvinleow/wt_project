@@ -28,3 +28,30 @@ exports.getAllContacts = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+exports.updateContactStatus = async (req, res) => {
+  try {
+    const contact = await Contact.findById(req.params.id);
+    if (!contact) return res.status(404).json({ message: "Contact not found" });
+
+    contact.status = req.body.status;
+    await contact.save();
+    res.json(contact);
+  } catch (err) {
+    console.error('Error updating contact status:', err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.deleteContact = async (req, res) => {
+  try {
+    const contact = await Contact.findById(req.params.id);
+    if (!contact) return res.status(404).json({ message: "Contact not found" });
+
+    await contact.remove();
+    res.json({ message: "Contact deleted" });
+  } catch (err) {
+    console.error('Error deleting contact:', err);
+    res.status(500).json({ message: err.message });
+  }
+};
