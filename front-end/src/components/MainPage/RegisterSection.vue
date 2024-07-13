@@ -1,10 +1,18 @@
 <template>
   <div class="register-section">
-    <form @submit.prevent="handleRegister" class="register-form">
+    <form @submit.prevent="handleRegister" v-if="!registrationSuccess" class="register-form">
       <h2>Register</h2>
       <div class="form-group">
         <label for="email">Email:</label>
-        <input type="email" id="email" name="email" v-model="email" required />
+        <input
+          type="email"
+          id="email"
+          name="email"
+          v-model="email"
+          @blur="validateEmail"
+          required
+        />
+        <span v-if="emailError" class="error-message">{{ emailError }}</span>
       </div>
       <div class="form-group">
         <label for="username">Username:</label>
@@ -23,8 +31,10 @@
           id="password"
           name="password"
           v-model="password"
+          @blur="validatePassword"
           required
         />
+        <span v-if="passwordError" class="error-message">{{ passwordError }}</span>
       </div>
       <div class="form-group">
         <label for="reenter-password">Re-enter Password:</label>
@@ -33,11 +43,20 @@
           id="reenter-password"
           name="reenter-password"
           v-model="reenterPassword"
+          @blur="validateReenterPassword"
           required
         />
+        <span v-if="reenterPasswordError" class="error-message">{{ reenterPasswordError }}</span>
       </div>
       <button type="submit" class="register-button">Register</button>
+      <p class="switch-form">
+        Already have an account? <a @click.prevent="switchToLogin" href="#">Login here</a>
+      </p>
     </form>
+    <div v-else class="success-message">
+      <h2>Account Register Successful!</h2>
+      <p>Redirecting to login page in {{ countdown }} seconds...</p>
+    </div>
   </div>
 </template>
 
@@ -52,12 +71,43 @@ export default {
       username: "",
       password: "",
       reenterPassword: "",
+      emailError: "",
+      passwordError: "",
+      reenterPasswordError: "",
+      registrationSuccess: false,
+      countdown: 3,
     };
   },
   methods: {
-    async handleRegister() {
+    validateEmail() {
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(this.email)) {
+        this.emailError = "Invalid email format.";
+      } else {
+        this.emailError = "";
+      }
+    },
+    validatePassword() {
+      const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,15}$/;
+      if (!passwordPattern.test(this.password)) {
+        this.passwordError = "Password must be 8-15 characters long and contain both letters and numbers";
+      } else {
+        this.passwordError = "";
+      }
+    },
+    validateReenterPassword() {
       if (this.password !== this.reenterPassword) {
-        alert("Passwords do not match!");
+        this.reenterPasswordError = "Passwords do not match!";
+      } else {
+        this.reenterPasswordError = "";
+      }
+    },
+    async handleRegister() {
+      this.validateEmail();
+      this.validatePassword();
+      this.validateReenterPassword();
+
+      if (this.emailError || this.passwordError || this.reenterPasswordError) {
         return;
       }
 
@@ -75,11 +125,25 @@ export default {
           userData
         );
         console.log("Account created:", response.data);
-        this.$router.push("/home");
+        this.registrationSuccess = true;
+        this.startCountdown();
       } catch (error) {
         console.error("Error creating account:", error);
         alert("Failed to create account. Please try again.");
       }
+    },
+    startCountdown() {
+      const interval = setInterval(() => {
+        if (this.countdown > 0) {
+          this.countdown--;
+        } else {
+          clearInterval(interval);
+          this.switchToLogin();
+        }
+      }, 1000);
+    },
+    switchToLogin() {
+      this.$emit("show-login");
     },
   },
 };
@@ -122,6 +186,13 @@ export default {
   border-radius: 5px;
 }
 
+.error-message {
+  color: red;
+  font-size: 0.8rem;
+  margin-top: 5px;
+  display: block;
+}
+
 .register-button {
   width: 100%;
   padding: 10px;
@@ -135,5 +206,25 @@ export default {
 
 .register-button:hover {
   background-color: #36a273;
+}
+
+.switch-form {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.switch-form a {
+  color: #42b983;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.switch-form a:hover {
+  text-decoration: underline;
+}
+
+.success-message {
+  text-align: center;
+  color: white;
 }
 </style>

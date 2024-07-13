@@ -15,8 +15,12 @@
           v-model="password"
           required
         />
+        <span v-if="loginError" class="error-message">{{ loginError }}</span>
       </div>
       <button type="submit" class="login-button">Login</button>
+      <p class="switch-form">
+        Don't have an account? <a @click.prevent="switchToRegister" href="#">Register here</a>
+      </p>
     </form>
   </div>
 </template>
@@ -30,6 +34,7 @@ export default {
     return {
       email: "",
       password: "",
+      loginError: "",
     };
   },
   methods: {
@@ -45,8 +50,11 @@ export default {
         this.$router.push("/home");
       } catch (error) {
         console.error("Error logging in:", error);
-        alert("Failed to login. Please check your email and password.");
+        this.loginError = "Failed to login. Please check your email and password.";
       }
+    },
+    switchToRegister() {
+      this.$emit("show-register");
     },
   },
 };
@@ -89,6 +97,13 @@ export default {
   border-radius: 5px;
 }
 
+.error-message {
+  color: red;
+  font-size: 0.8rem;
+  margin-top: 5px;
+  display: block;
+}
+
 .login-button {
   width: 100%;
   padding: 10px;
@@ -102,5 +117,18 @@ export default {
 
 .login-button:hover {
   background-color: #36a273;
+}
+
+.switch-form {
+  margin-top: 15px;
+  text-align: center;
+}
+.switch-form a {
+  color: #42b983;
+  cursor: pointer;
+  text-decoration: none;
+}
+.switch-form a:hover {
+  text-decoration: underline;
 }
 </style>
