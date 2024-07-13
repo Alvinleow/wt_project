@@ -19,7 +19,10 @@ async function saveCourse(course, req, res) {
 
 exports.getAllCourses = async (req, res) => {
   try {
-    const courses = await Course.find();
+    const limit = parseInt(req.query.limit) || 10;
+    const sort = req.query.sort === "desc" ? -1 : 1;
+
+    const courses = await Course.find().sort({ createdAt: sort }).limit(limit);
     res.json(courses);
   } catch (err) {
     res.status(500).json({ message: err.message });
