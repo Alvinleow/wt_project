@@ -6,6 +6,7 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
+    "prestart": "npm install bcrypt",
     "start": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd back-end && node app.js",
     "client": "cd front-end && npm run serve"
