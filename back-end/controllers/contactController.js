@@ -48,7 +48,7 @@ exports.deleteContact = async (req, res) => {
     const contact = await Contact.findById(req.params.id);
     if (!contact) return res.status(404).json({ message: "Contact not found" });
 
-    await contact.remove();
+await contact.deleteOne();
     res.json({ message: "Contact deleted" });
   } catch (err) {
     console.error('Error deleting contact:', err);
