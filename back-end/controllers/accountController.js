@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require("bcrypt");
 const Account = require("../models/account");
 const { storage } = require("../config/firebase");
 
@@ -40,7 +40,8 @@ exports.getAccountByID = async (req, res) => {
 
 // Register account
 exports.createAccount = async (req, res) => {
-  const { username, email, password, completedCourses, accountLevel } = req.body;
+  const { username, email, password, completedCourses, accountLevel } =
+    req.body;
 
   try {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -107,7 +108,9 @@ exports.updateAccount = async (req, res) => {
       });
 
       blobStream.on("finish", async () => {
-        const profilePicUrl = `https://firebasestorage.googleapis.com/v0/b/${storage.name}/o/${encodeURIComponent(blob.name)}?alt=media`;
+        const profilePicUrl = `https://firebasestorage.googleapis.com/v0/b/${
+          storage.name
+        }/o/${encodeURIComponent(blob.name)}?alt=media`;
         account.profilePicUrl = profilePicUrl;
         await saveAccount(account, req, res);
       });
@@ -153,5 +156,45 @@ exports.verifyPassword = async (req, res) => {
     res.json({ success: true, message: "Password verified" });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+exports.enrollCourse = async (req, res) => {
+  const { userId } = req.params;
+  const { courseId } = req.body;
+
+  try {
+    const account = await Account.findById(userId);
+    if (!account) return res.status(404).json({ message: "User not found" });
+
+    if (!account.enrolledCourses.includes(courseId)) {
+      account.enrolledCourses.push(courseId);
+      await account.save();
+    }
+
+    res.json(account);
+  } catch (err) {
+    console.error("Error enrolling in course:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.unenrollCourse = async (req, res) => {
+  const { userId } = req.params;
+  const { courseId } = req.body;
+
+  try {
+    const account = await Account.findById(userId);
+    if (!account) return res.status(404).json({ message: "User not found" });
+
+    account.enrolledCourses = account.enrolledCourses.filter(
+      (id) => id.toString() !== courseId
+    );
+    await account.save();
+
+    res.json(account);
+  } catch (err) {
+    console.error("Error unenrolling from course:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
