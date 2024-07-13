@@ -82,7 +82,9 @@
           Enroll Course
         </button>
         <div v-else>
-          <button class="view-lessons-btn">View Lessons</button>
+          <button class="view-lessons-btn" @click="navigateToLessons">
+            View Lessons
+          </button>
           <button class="unenroll-btn" @click="confirmUnenroll">
             Unenroll Course
           </button>
@@ -259,6 +261,12 @@ export default {
       } catch (error) {
         console.error("Error unenrolling from course:", error);
       }
+    },
+    navigateToLessons() {
+      this.$router.push({
+        name: "Lessons",
+        params: { courseId: this.selectedCourse._id },
+      });
     },
   },
 };

@@ -1,6 +1,8 @@
+const bcrypt = require('bcrypt');
 const Account = require("../models/account");
 const { storage } = require("../config/firebase");
-const { ObjectId } = require("mongoose").Types;
+
+const saltRounds = 10; // Number of salt rounds for bcrypt
 
 async function saveAccount(account, req, res) {
   account.username = req.body.username || account.username;
@@ -14,6 +16,7 @@ async function saveAccount(account, req, res) {
   }
 }
 
+// Get all accounts
 exports.getAllAccounts = async (req, res) => {
   try {
     console.log("Fetching all accounts");
@@ -24,6 +27,7 @@ exports.getAllAccounts = async (req, res) => {
   }
 };
 
+// Get a single account by _id
 exports.getAccountByID = async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
@@ -34,21 +38,22 @@ exports.getAccountByID = async (req, res) => {
   }
 };
 
+// Register account
 exports.createAccount = async (req, res) => {
-  const { username, email, password, completedCourses, accountLevel } =
-    req.body;
-
-  const account = new Account({
-    username,
-    email,
-    password,
-    completedCourses,
-    accountLevel,
-    profilePicUrl:
-      "https://img.icons8.com/ios-filled/100/ffffff/user-male-circle.png",
-  });
+  const { username, email, password, completedCourses, accountLevel } = req.body;
 
   try {
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const account = new Account({
+      username,
+      email,
+      password: hashedPassword,
+      completedCourses,
+      accountLevel,
+      profilePicUrl:
+        "https://img.icons8.com/ios-filled/100/ffffff/user-male-circle.png",
+    });
+
     console.log("Creating a new account:", account);
     const newAccount = await account.save();
     res.status(201).json(newAccount);
@@ -58,6 +63,7 @@ exports.createAccount = async (req, res) => {
   }
 };
 
+// Login
 exports.loginAccount = async (req, res) => {
   const { email, password } = req.body;
 
@@ -67,7 +73,8 @@ exports.loginAccount = async (req, res) => {
       return res.status(404).json({ message: "Account not found" });
     }
 
-    if (account.password !== password) {
+    const isMatch = await bcrypt.compare(password, account.password);
+    if (!isMatch) {
       return res.status(400).json({ message: "Incorrect password" });
     }
 
@@ -77,6 +84,7 @@ exports.loginAccount = async (req, res) => {
   }
 };
 
+// Update account
 exports.updateAccount = async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
@@ -99,9 +107,7 @@ exports.updateAccount = async (req, res) => {
       });
 
       blobStream.on("finish", async () => {
-        const profilePicUrl = `https://firebasestorage.googleapis.com/v0/b/${
-          storage.name
-        }/o/${encodeURIComponent(blob.name)}?alt=media`;
+        const profilePicUrl = `https://firebasestorage.googleapis.com/v0/b/${storage.name}/o/${encodeURIComponent(blob.name)}?alt=media`;
         account.profilePicUrl = profilePicUrl;
         await saveAccount(account, req, res);
       });
@@ -116,6 +122,7 @@ exports.updateAccount = async (req, res) => {
   }
 };
 
+// Delete account
 exports.deleteAccount = async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
@@ -128,45 +135,23 @@ exports.deleteAccount = async (req, res) => {
   }
 };
 
-exports.enrollInCourse = async (req, res) => {
-  try {
-    const userId = new ObjectId(req.params.userId);
-    const courseId = new ObjectId(req.body.courseId);
+// Verify password
+exports.verifyPassword = async (req, res) => {
+  const { password } = req.body;
 
-    const account = await Account.findById(userId);
+  try {
+    const account = await Account.findById(req.params.id);
     if (!account) {
       return res.status(404).json({ message: "Account not found" });
     }
 
-    if (!account.enrolledCourses.includes(courseId)) {
-      account.enrolledCourses.push(courseId);
+    const isMatch = await bcrypt.compare(password, account.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Incorrect password" });
     }
 
-    await account.save();
-    res.json({ message: "Enrolled in course", account });
+    res.json({ success: true, message: "Password verified" });
   } catch (err) {
-    console.error("Error enrolling in course:", err);
-    res.status(500).json({ message: err.message });
-  }
-};
-
-exports.unenrollFromCourse = async (req, res) => {
-  try {
-    const userId = new ObjectId(req.params.userId);
-    const courseId = new ObjectId(req.body.courseId);
-
-    const account = await Account.findById(userId);
-    if (!account) {
-      return res.status(404).json({ message: "Account not found" });
-    }
-
-    account.enrolledCourses = account.enrolledCourses.filter(
-      (id) => !id.equals(courseId)
-    );
-    await account.save();
-    res.json({ message: "Unenrolled from course", account });
-  } catch (err) {
-    console.error("Error unenrolling from course:", err);
     res.status(500).json({ message: err.message });
   }
 };
