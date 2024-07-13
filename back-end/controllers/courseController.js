@@ -140,7 +140,7 @@ exports.addLesson = async (req, res) => {
     const course = await Course.findById(new mongoose.Types.ObjectId(courseId));
     if (!course) return res.status(404).json({ message: "Course not found" });
 
-    course.lessons.push({ title, content: "" });
+    course.lessons.push({ title, content: "", status: "not viewed" });
     course.totalOfLessons = course.lessons.length;
     await course.save();
 
@@ -152,7 +152,7 @@ exports.addLesson = async (req, res) => {
 };
 
 exports.updateLesson = async (req, res) => {
-  const { content } = req.body;
+  const { content, status } = req.body;
   const { courseId, lessonId } = req.params;
 
   try {
@@ -163,6 +163,10 @@ exports.updateLesson = async (req, res) => {
     if (!lesson) return res.status(404).json({ message: "Lesson not found" });
 
     lesson.content = content;
+    if (status) {
+      lesson.status = status;
+    }
+
     await course.save();
 
     res.json(course);
