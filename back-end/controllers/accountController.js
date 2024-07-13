@@ -1,5 +1,6 @@
 const Account = require("../models/account");
 const { storage } = require("../config/firebase");
+const { ObjectId } = require("mongoose").Types;
 
 async function saveAccount(account, req, res) {
   account.username = req.body.username || account.username;
@@ -129,18 +130,43 @@ exports.deleteAccount = async (req, res) => {
 
 exports.enrollInCourse = async (req, res) => {
   try {
-    const account = await Account.findById(req.params.id);
-    if (!account) return res.status(404).json({ message: "Account not found" });
+    const userId = new ObjectId(req.params.userId);
+    const courseId = new ObjectId(req.body.courseId);
 
-    const { courseId } = req.body;
-    if (!account.enrolledCourses.includes(courseId)) {
-      account.enrolledCourses.push(courseId);
-      await account.save();
+    const account = await Account.findById(userId);
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
     }
 
-    res.json(account);
+    if (!account.enrolledCourses.includes(courseId)) {
+      account.enrolledCourses.push(courseId);
+    }
+
+    await account.save();
+    res.json({ message: "Enrolled in course", account });
   } catch (err) {
     console.error("Error enrolling in course:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.unenrollFromCourse = async (req, res) => {
+  try {
+    const userId = new ObjectId(req.params.userId);
+    const courseId = new ObjectId(req.body.courseId);
+
+    const account = await Account.findById(userId);
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    account.enrolledCourses = account.enrolledCourses.filter(
+      (id) => !id.equals(courseId)
+    );
+    await account.save();
+    res.json({ message: "Unenrolled from course", account });
+  } catch (err) {
+    console.error("Error unenrolling from course:", err);
     res.status(500).json({ message: err.message });
   }
 };
