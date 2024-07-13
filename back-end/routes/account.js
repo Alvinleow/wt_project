@@ -29,4 +29,7 @@ router.delete("/:id", accountController.deleteAccount);
 // Verify password
 router.post("/:id/verify-password", accountController.verifyPassword);
 
+router.put("/enroll/:userId", accountController.enrollCourse);
+router.put("/unenroll/:userId", accountController.unenrollCourse);
+
 module.exports = router;

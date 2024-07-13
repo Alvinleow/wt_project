@@ -45,11 +45,7 @@
             >
               Next Lesson &gt;
             </button>
-            <button
-              class="finish-button"
-              v-if="canFinishCourse"
-              @click="finishCourse"
-            >
+            <button class="finish-button" @click="finishCourse">
               Finish Course
             </button>
           </div>
@@ -83,6 +79,14 @@
           <button type="button" @click="closeEditLessonModal">Cancel</button>
         </div>
       </div>
+
+      <!-- Finish Course Modal -->
+      <div v-if="showFinishModal" class="modal-overlay">
+        <div class="modal">
+          <h2>{{ finishMessage }}</h2>
+          <button @click="closeFinishModal">OK</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -103,20 +107,17 @@ export default {
       lessons: [],
       showAddLessonModalWindow: false,
       showEditLessonModalWindow: false,
+      showFinishModal: false,
       newLessonTitle: "",
       selectedLesson: null,
       selectedLessonIndex: -1,
       quill: null,
+      finishMessage: "",
       courseId: this.$route.params.courseId, // Retrieve course ID from route params
     };
   },
   async created() {
     await this.fetchLessons();
-  },
-  computed: {
-    canFinishCourse() {
-      return this.lessons.every((lesson) => lesson.status === "viewed");
-    },
   },
   methods: {
     async fetchLessons() {
@@ -217,8 +218,16 @@ export default {
       }
     },
     finishCourse() {
-      alert("Congratulations! You have finished the course.");
-      // Additional logic for finishing the course can be added here.
+      if (this.lessons.every((lesson) => lesson.status === "viewed")) {
+        this.finishMessage =
+          "Congratulations! You have completed all the lessons!";
+      } else {
+        this.finishMessage = "You haven't completed all the lessons yet.";
+      }
+      this.showFinishModal = true;
+    },
+    closeFinishModal() {
+      this.showFinishModal = false;
     },
   },
 };
