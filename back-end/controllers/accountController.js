@@ -33,7 +33,10 @@ exports.getAccountByID = async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
     if (!account) return res.status(404).json({ message: "Account not found" });
-    res.json(account);
+
+    const quizResults = account.quizResults || [];
+
+    res.json({ ...account._doc, quizResults });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

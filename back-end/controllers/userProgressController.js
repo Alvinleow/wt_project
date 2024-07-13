@@ -1,16 +1,18 @@
 const UserProgress = require("../models/userProgress");
 
 exports.getUserProgress = async (req, res) => {
-  const { userId, courseId } = req.params;
+  const { userId } = req.params;
 
   try {
-    const userProgress = await UserProgress.findOne({ userId, courseId });
-    if (!userProgress) {
+    const userProgresses = await UserProgress.find({ userId });
+    if (!userProgresses.length) {
       return res.status(404).json({ message: "User progress not found" });
     }
-    res.json(userProgress);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+
+    res.json(userProgresses);
+  } catch (err) {
+    console.error("Error fetching user progress:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
