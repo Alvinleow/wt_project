@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Course = require("../models/course");
+const quizController = require("./quizController");
 const { storage } = require("../config/firebase");
 
 async function saveCourse(course, req, res) {
@@ -7,8 +8,9 @@ async function saveCourse(course, req, res) {
   course.description = req.body.description || course.description;
 
   try {
-    const updatedCourse = await course.save();
-    res.json(updatedCourse);
+    const savedCourse = await course.save();
+    await quizController.generateQuizForCourse(savedCourse._id);
+    res.json(savedCourse);
   } catch (err) {
     console.error("Error saving course:", err);
     res.status(400).json({ message: err.message });

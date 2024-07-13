@@ -15,6 +15,7 @@
         <li>
           <router-link to="/course-materials">COURSE MATERIALS</router-link>
         </li>
+        <li><router-link to="/quizzes">QUIZZES</router-link></li>
         <li>
           <router-link to="/course-progress">COURSE PROGRESS</router-link>
         </li>

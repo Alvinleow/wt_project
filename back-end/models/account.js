@@ -34,6 +34,14 @@ const AccountSchema = new mongoose.Schema(
       default:
         "https://img.icons8.com/ios-filled/100/ffffff/user-male-circle.png",
     },
+    quizResults: [
+      {
+        quizId: { type: mongoose.Schema.Types.ObjectId, ref: "Quiz" },
+        score: { type: Number },
+        totalQuestions: { type: Number },
+        date: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,
