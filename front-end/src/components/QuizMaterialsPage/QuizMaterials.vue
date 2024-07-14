@@ -11,6 +11,8 @@
         <option value="date">Date</option>
         <option value="questions">Number of Questions</option>
       </select>
+    </div>
+    <div class="add-quiz-button-container" v-if="isAdmin">
       <button @click="showAddQuizModal">Add Quiz</button>
     </div>
     <div class="quiz-list">
@@ -30,7 +32,7 @@
       <div class="modal">
         <h2>Add New Quiz</h2>
         <form @submit.prevent="addQuiz">
-          <div>
+          <div class="form-group">
             <label for="course">Select Course:</label>
             <select v-model="selectedCourseId" required>
               <option
@@ -42,8 +44,10 @@
               </option>
             </select>
           </div>
-          <button type="submit">Add Quiz</button>
-          <button type="button" @click="closeAddQuizModal">Cancel</button>
+          <div class="form-buttons">
+            <button type="submit">Add Quiz</button>
+            <button type="button" @click="closeAddQuizModal">Cancel</button>
+          </div>
         </form>
       </div>
     </div>
@@ -72,6 +76,9 @@ export default {
       userId: (state) => (state.user ? state.user._id : null),
       user: (state) => state.user,
     }),
+    isAdmin() {
+      return this.user && this.user.accountLevel === 1;
+    },
   },
   mounted() {
     this.fetchQuizzes();
@@ -168,7 +175,11 @@ export default {
 .search-sort-bar {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .search-sort-bar input {
@@ -176,11 +187,36 @@ export default {
   padding: 10px;
   font-size: 1rem;
   margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
 }
 
 .search-sort-bar select {
   padding: 10px;
   font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.add-quiz-button-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.add-quiz-button-container button {
+  padding: 10px 20px;
+  font-size: 1.2rem;
+  background-color: #42b983;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.add-quiz-button-container button:hover {
+  background-color: #36a273;
 }
 
 .quiz-list {
@@ -237,38 +273,69 @@ export default {
 .modal {
   background: #000;
   color: #fff;
-  padding: 20px;
+  padding: 30px;
   border-radius: 10px;
-  max-width: 500px;
+  max-width: 800px;
   text-align: center;
 }
 
-.modal button {
-  padding: 10px;
+.modal h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: #42b983;
+}
+
+.modal .form-group {
+  margin-bottom: 20px;
+}
+
+.modal .form-group label {
+  display: block;
+  color: #fff;
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.modal .form-group select,
+.modal .form-group input,
+.modal .form-group textarea {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1.2rem;
+}
+
+.modal .form-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.modal .form-buttons button {
+  padding: 15px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.2rem;
   transition: background-color 0.3s;
-  margin-top: 20px;
 }
 
-.modal button:first-of-type {
+.modal .form-buttons button:first-of-type {
   background-color: #42b983;
   color: white;
-  margin-right: 10px;
 }
 
-.modal button:first-of-type:hover {
+.modal .form-buttons button:first-of-type:hover {
   background-color: #36a273;
 }
 
-.modal button:last-of-type {
+.modal .form-buttons button:last-of-type {
   background-color: #ff4d4d;
   color: white;
 }
 
-.modal button:last-of-type:hover {
+.modal .form-buttons button:last-of-type:hover {
   background-color: #ff1a1a;
 }
 </style>
