@@ -19,13 +19,22 @@
           </ul>
         </div>
         <div class="content">
-          <button @click="showAddLessonModal">Add New Lesson</button>
-          <button v-if="selectedLesson" @click="showEditLessonModal">
-            Edit Lesson Content
-          </button>
-          <div v-if="selectedLesson">
-            <h3>{{ selectedLesson.title }}</h3>
-            <div v-html="selectedLesson.content"></div>
+          <div class="action-buttons" v-if="isAdmin">
+            <button @click="showAddLessonModal">Add New Lesson</button>
+            <button v-if="selectedLesson" @click="showEditLessonModal">
+              Edit Lesson Content
+            </button>
+            <button
+              v-if="selectedLesson"
+              @click="showDeleteLessonModal"
+              class="delete-button"
+            >
+              Delete Lesson
+            </button>
+          </div>
+          <div v-if="selectedLesson" class="lesson-container">
+            <h3 class="lesson-title">{{ selectedLesson.title }}</h3>
+            <div v-html="selectedLesson.content" class="lesson-text"></div>
           </div>
           <div v-else class="empty-content-message">
             <h2>Please select a lesson to view or edit its content.</h2>
@@ -45,7 +54,11 @@
             >
               Next Lesson &gt;
             </button>
-            <button class="finish-button" @click="finishCourse">
+            <button
+              class="finish-button"
+              v-if="selectedLessonIndex === lessons.length - 1"
+              @click="finishCourse"
+            >
               Finish Course
             </button>
           </div>
@@ -57,13 +70,15 @@
         <div class="modal">
           <h2>Add New Lesson</h2>
           <form @submit.prevent="addLesson">
-            <label for="lessonTitle">Lesson Title:</label>
-            <input
-              type="text"
-              id="lessonTitle"
-              v-model="newLessonTitle"
-              required
-            />
+            <div>
+              <label for="lessonTitle">Lesson Title:</label>
+              <input
+                type="text"
+                id="lessonTitle"
+                v-model="newLessonTitle"
+                required
+              />
+            </div>
             <button type="submit">Add Lesson</button>
             <button type="button" @click="closeAddLessonModal">Cancel</button>
           </form>
@@ -80,11 +95,21 @@
         </div>
       </div>
 
+      <!-- Delete Lesson Confirmation Modal -->
+      <div v-if="showDeleteLessonModalWindow" class="modal-overlay">
+        <div class="modal">
+          <h2>Are you sure you want to delete this lesson?</h2>
+          <button @click="deleteLesson">Yes</button>
+          <button type="button" @click="closeDeleteLessonModal">No</button>
+        </div>
+      </div>
+
       <!-- Finish Course Modal -->
       <div v-if="showFinishModal" class="modal-overlay">
         <div class="modal">
           <h2>{{ finishMessage }}</h2>
-          <button @click="closeFinishModal">OK</button>
+          <button @click="goHome">Back to Home</button>
+          <button @click="attemptQuiz">Attempt Now</button>
         </div>
       </div>
     </div>
@@ -96,6 +121,7 @@ import axios from "axios";
 import NavBar from "../components/NavBar.vue";
 import Quill from "quill";
 import "quill/dist/quill.snow.css";
+import { mapState } from "vuex";
 
 export default {
   name: "LessonPage",
@@ -107,17 +133,28 @@ export default {
       lessons: [],
       showAddLessonModalWindow: false,
       showEditLessonModalWindow: false,
+      showDeleteLessonModalWindow: false,
       showFinishModal: false,
       newLessonTitle: "",
       selectedLesson: null,
       selectedLessonIndex: -1,
       quill: null,
       finishMessage: "",
-      courseId: this.$route.params.courseId, // Retrieve course ID from route params
+      courseId: this.$route.params.courseId,
     };
+  },
+  computed: {
+    ...mapState({
+      userId: (state) => (state.user ? state.user._id : null),
+      accountLevel: (state) => (state.user ? state.user.accountLevel : null),
+    }),
+    isAdmin() {
+      return this.accountLevel === 1;
+    },
   },
   async created() {
     await this.fetchLessons();
+    await this.fetchUserProgress();
   },
   methods: {
     async fetchLessons() {
@@ -128,6 +165,25 @@ export default {
         this.lessons = response.data.lessons;
       } catch (error) {
         console.error("Error fetching lessons:", error);
+      }
+    },
+    async fetchUserProgress() {
+      try {
+        const response = await axios.get(
+          `http://localhost:8081/api/userProgress/${this.userId}/${this.courseId}`
+        );
+        if (response.data && response.data.lessonStatuses) {
+          this.lessons.forEach((lesson) => {
+            const progress = response.data.lessonStatuses.find(
+              (ls) => ls.lessonId === lesson._id
+            );
+            if (progress) {
+              lesson.status = progress.status;
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user progress:", error);
       }
     },
     showAddLessonModal() {
@@ -192,19 +248,62 @@ export default {
         }
       }
     },
+    showDeleteLessonModal() {
+      this.showDeleteLessonModalWindow = true;
+    },
+    closeDeleteLessonModal() {
+      this.showDeleteLessonModalWindow = false;
+    },
+    async deleteLesson() {
+      if (this.selectedLesson) {
+        try {
+          const deleteResponse = await axios.delete(
+            `http://localhost:8081/api/courses/${this.courseId}/lessons/${this.selectedLesson._id}`
+          );
+          console.log("Delete response:", deleteResponse.data);
+
+          this.lessons = this.lessons.filter(
+            (lesson) => lesson._id !== this.selectedLesson._id
+          );
+
+          console.log(`Updated number of lessons: ${this.lessons.length}`);
+
+          const updateResponse = await axios.put(
+            `http://localhost:8081/api/courses/${this.courseId}`,
+            {
+              totalOfLessons: this.lessons.length,
+            }
+          );
+
+          console.log("Update response:", updateResponse.data);
+
+          this.closeDeleteLessonModal();
+        } catch (error) {
+          console.error("Error deleting lesson:", error);
+        }
+      }
+    },
+    async updateLessonStatus(lessonId, status) {
+      try {
+        await axios.put(`http://localhost:8081/api/userProgress`, {
+          userId: this.userId,
+          courseId: this.courseId,
+          lessonId,
+          status,
+        });
+        const lesson = this.lessons.find((lesson) => lesson._id === lessonId);
+        if (lesson) {
+          lesson.status = status;
+        }
+      } catch (error) {
+        console.error("Error updating lesson status:", error);
+      }
+    },
     async nextLesson() {
       if (this.selectedLessonIndex < this.lessons.length - 1) {
         const nextLesson = this.lessons[this.selectedLessonIndex + 1];
         if (this.selectedLesson.status !== "viewed") {
-          try {
-            await axios.put(
-              `http://localhost:8081/api/courses/${this.courseId}/lessons/${this.selectedLesson._id}`,
-              { status: "viewed" }
-            );
-            this.selectedLesson.status = "viewed";
-          } catch (error) {
-            console.error("Error updating lesson status:", error);
-          }
+          await this.updateLessonStatus(this.selectedLesson._id, "viewed");
         }
         this.selectLesson(nextLesson, this.selectedLessonIndex + 1);
       }
@@ -217,10 +316,24 @@ export default {
         );
       }
     },
-    finishCourse() {
+    async finishCourse() {
+      // Check if all previous lessons are viewed
+      for (let i = 0; i < this.selectedLessonIndex; i++) {
+        if (this.lessons[i].status !== "viewed") {
+          this.finishMessage = "You haven't completed all the lessons yet.";
+          this.showFinishModal = true;
+          return;
+        }
+      }
+
+      // Mark current lesson as viewed
+      if (this.selectedLesson.status !== "viewed") {
+        await this.updateLessonStatus(this.selectedLesson._id, "viewed");
+      }
+
       if (this.lessons.every((lesson) => lesson.status === "viewed")) {
         this.finishMessage =
-          "Congratulations! You have completed all the lessons!";
+          "Congratulations! You have completed all the lessons! Do you want to proceed to the quiz for this course?";
       } else {
         this.finishMessage = "You haven't completed all the lessons yet.";
       }
@@ -228,6 +341,24 @@ export default {
     },
     closeFinishModal() {
       this.showFinishModal = false;
+    },
+    goHome() {
+      this.$router.push("/home");
+    },
+    async attemptQuiz() {
+      try {
+        const response = await axios.get(
+          `http://localhost:8081/api/quizzes/${this.courseId}/quiz`
+        );
+        const quizId = response.data.quizId;
+        if (quizId) {
+          this.$router.push(`/quizzes/${quizId}`);
+        } else {
+          console.error("Quiz not found for this course");
+        }
+      } catch (error) {
+        console.error("Error fetching quiz ID:", error);
+      }
     },
   },
 };
@@ -270,7 +401,7 @@ export default {
 }
 
 .sidebar li.viewed {
-  background: #36a273;
+  background: #228b22; /* Dark green for viewed lessons */
 }
 
 .sidebar li.not-viewed {
@@ -308,9 +439,19 @@ export default {
   background-color: #36a273;
 }
 
+.delete-button {
+  background-color: #ff4d4d !important;
+  margin-left: 0px;
+}
+
+.delete-button:hover {
+  background-color: #ff1a1a !important;
+}
+
 .lesson-navigation {
   display: flex;
   justify-content: space-between;
+  align-items: center; /* Ensures buttons are aligned in the middle */
 }
 
 .prev-button {
@@ -323,6 +464,7 @@ export default {
 
 .next-button {
   background-color: #42b983;
+  margin-left: auto;
 }
 
 .next-button:hover {
@@ -352,34 +494,75 @@ export default {
 }
 
 .modal {
-  background: #fff;
-  color: #000;
+  background: #000;
+  color: #fff;
   padding: 20px;
   border-radius: 10px;
+  max-width: 500px;
   text-align: center;
-  width: 300px;
 }
 
 .modal button {
   padding: 10px;
-  margin: 10px;
-  cursor: pointer;
   border: none;
   border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.2rem; /* Increased font size */
+  transition: background-color 0.3s;
+  margin-top: 20px;
 }
 
-.modal button[type="submit"] {
+.modal button:first-of-type {
   background-color: #42b983;
   color: white;
+  margin-right: 10px;
 }
 
-.modal button[type="button"] {
+.modal button:first-of-type:hover {
+  background-color: #36a273;
+}
+
+.modal button:last-of-type {
   background-color: #ff4d4d;
   color: white;
 }
 
+.modal button:last-of-type:hover {
+  background-color: #ff1a1a;
+}
+
+.modal input,
+.modal textarea {
+  width: 100%;
+  padding: 15px; /* Increased padding */
+  margin: 10px 0;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 1.2rem; /* Increased font size */
+}
+
 .quill-editor {
   height: 200px;
+  margin-bottom: 20px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.lesson-container {
+  margin-bottom: 20px;
+}
+
+.lesson-title {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.lesson-text {
+  font-size: 1.2rem;
   margin-bottom: 20px;
 }
 </style>

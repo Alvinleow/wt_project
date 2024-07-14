@@ -7,6 +7,8 @@ import CourseProgressPage from "../views/CourseProgressPage.vue";
 import ContactPage from "../views/ContactPage.vue";
 import ProfilePage from "../views/ProfilePage.vue";
 import LessonPage from "../views/LessonPage.vue";
+import QuizPage from "../views/QuizPage.vue";
+import QuestionsPage from "../components/QuizMaterialsPage/QuestionsPage.vue";
 
 const routes = [
   { path: "/", name: "MainPage", component: MainPage },
@@ -17,6 +19,7 @@ const routes = [
     name: "CourseMaterialsPage",
     component: CourseMaterialsPage,
   },
+  { path: "/quizzes", name: "QuizPage", component: QuizPage },
   {
     path: "/course-progress",
     name: "CourseProgress",
@@ -38,6 +41,11 @@ const routes = [
     name: "Lessons",
     component: LessonPage,
     props: true,
+  },
+  {
+    path: "/quizzes/:quizId",
+    name: "QuestionsPage",
+    component: QuestionsPage,
   },
 ];
 
