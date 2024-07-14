@@ -8,9 +8,27 @@ exports.getUserProgress = async (req, res) => {
     if (!userProgress) {
       return res.status(404).json({ message: "User progress not found" });
     }
+
     res.json(userProgress);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  } catch (err) {
+    console.error("Error fetching user progress:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.fetchUserProgress = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const userProgresses = await UserProgress.find({ userId });
+    if (!userProgresses.length) {
+      return res.status(404).json({ message: "User progress not found" });
+    }
+
+    res.json(userProgresses);
+  } catch (err) {
+    console.error("Error fetching user progress:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 

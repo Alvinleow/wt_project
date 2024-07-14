@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const Account = require("../models/account");
+const Course = require("../models/course");
 const { storage } = require("../config/firebase");
 
 const saltRounds = 10; // Number of salt rounds for bcrypt
@@ -32,7 +33,10 @@ exports.getAccountByID = async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
     if (!account) return res.status(404).json({ message: "Account not found" });
-    res.json(account);
+
+    const quizResults = account.quizResults || [];
+
+    res.json({ ...account._doc, quizResults });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -165,14 +169,18 @@ exports.enrollCourse = async (req, res) => {
 
   try {
     const account = await Account.findById(userId);
+    const course = await Course.findById(courseId);
     if (!account) return res.status(404).json({ message: "User not found" });
+    if (!course) return res.status(404).json({ message: "Course not found" });
 
     if (!account.enrolledCourses.includes(courseId)) {
       account.enrolledCourses.push(courseId);
+      course.enrollment += 1;
       await account.save();
+      await course.save();
     }
 
-    res.json(account);
+    res.json({ account, course });
   } catch (err) {
     console.error("Error enrolling in course:", err);
     res.status(500).json({ message: "Server error" });
@@ -185,14 +193,18 @@ exports.unenrollCourse = async (req, res) => {
 
   try {
     const account = await Account.findById(userId);
+    const course = await Course.findById(courseId);
     if (!account) return res.status(404).json({ message: "User not found" });
+    if (!course) return res.status(404).json({ message: "Course not found" });
 
     account.enrolledCourses = account.enrolledCourses.filter(
       (id) => id.toString() !== courseId
     );
+    course.enrollment -= 1;
     await account.save();
+    await course.save();
 
-    res.json(account);
+    res.json({ account, course });
   } catch (err) {
     console.error("Error unenrolling from course:", err);
     res.status(500).json({ message: "Server error" });

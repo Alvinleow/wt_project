@@ -33,14 +33,14 @@
               <p>{{ user.email }}</p>
             </div>
           </div>
-          <div class="completed-courses">
+          <!-- <div class="completed-courses">
             <h3>Completed Courses</h3>
             <ul>
               <li v-for="course in user.completedCourses" :key="course.id">
                 {{ course.title }}
               </li>
             </ul>
-          </div>
+          </div> -->
           <button
             v-if="!isEditing"
             class="edit-profile-btn"
@@ -236,7 +236,8 @@ export default {
         this.startCountdown();
       } catch (error) {
         console.error("Error deleting account:", error);
-        this.deleteError = "Failed to delete account. Please check your password.";
+        this.deleteError =
+          "Failed to delete account. Please check your password.";
       }
     },
     startCountdown() {
