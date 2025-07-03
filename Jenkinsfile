@@ -36,6 +36,12 @@ pipeline {
         stage('Run JMeter Performance Test') {
             steps {
                 script {
+                    // Delete the old result.jtl file if it exists
+                    bat 'del /f /q result.jtl'
+
+                    // Clean the report directory to remove old reports
+                    bat 'rmdir /s /q jmeter\\report'
+
                     // Run JMeter Test in non-GUI mode
                     bat "\"${JMETER_PATH}\" -n -t ${JMETER_TEST} -l ${JMETER_RESULT} -e -o ${JMETER_REPORT_DIR}"
                 }
