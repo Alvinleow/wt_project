@@ -19,24 +19,24 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
-                    // Install Node.js dependencies
-                    sh 'npm install'
+                    // Install Node.js dependencies using bat for Windows
+                    bat 'npm install'
                 }
             }
         }
         stage('Build Vue.js') {
             steps {
                 script {
-                    // Build the Vue.js project
-                    sh 'npm run build'
+                    // Build the Vue.js project using bat for Windows
+                    bat 'npm run build'
                 }
             }
         }
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build the Docker image using the Dockerfile
-                    sh "docker build -t ${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ."
+                    // Build the Docker image using bat for Windows
+                    bat "docker build -t ${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ."
                 }
             }
         }
@@ -44,9 +44,9 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'SC_PROJECT_DOCKER', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
                     script {
-                        // Log in to Docker Hub and push the image securely
-                        sh "echo ${DOCKERHUB_PASS} | docker login -u ${DOCKERHUB_USER} --password-stdin"
-                        sh "docker push ${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+                        // Log in to Docker Hub and push the image using bat for Windows
+                        bat "echo ${DOCKERHUB_PASS} | docker login -u ${DOCKERHUB_USER} --password-stdin"
+                        bat "docker push ${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
                     }
                 }
             }
