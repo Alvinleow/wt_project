@@ -55,7 +55,7 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'SC_PROJECT_JIRA', usernameVariable: 'JIRA_USERNAME', passwordVariable: 'JIRA_API_TOKEN')]) {
                     script {
-                        jiraAddComment issueKey: "${JIRA_ISSUE}", comment: "Docker image build and push successful. Image is available at Docker Hub."
+                        jiraComment issueKey: "${JIRA_ISSUE}", comment: "Docker image build and push successful. Image is available at Docker Hub."
                     }
                 }
             }
