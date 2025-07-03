@@ -57,12 +57,14 @@ pipeline {
                     script {
                         // Add a comment to the Jira issue using the jiraAddComment step
                         jiraAddComment(
+                            site: 'SC_Project1',
                             idOrKey: "${JIRA_ISSUE}", 
                             comment: "Docker image build and push successful. Image is available at Docker Hub."
                         )
 
                         // Transition the issue to 'Done' using the jiraTransitionIssue step
                         jiraTransitionIssue(
+                            site: 'SC_Project1',
                             idOrKey: "${JIRA_ISSUE}",
                             input: [transition: 'Done']
                         )
