@@ -5,6 +5,7 @@ pipeline {
         JMETER_PATH = 'C:\\apache-jmeter-5.6.3\\bin\\jmeter.bat'
         JMETER_TEST = 'jmeter/performance-test.jmx'
         JMETER_RESULT = 'result.jtl'
+        JMETER_REPORT_DIR = 'jmeter/report'
         JIRA_ISSUE = 'G5-1'
         DOCKER_IMAGE_NAME = 'sc-project1-image'
         DOCKER_IMAGE_TAG = 'latest'
@@ -29,6 +30,14 @@ pipeline {
                 script {
                     // Build the Vue.js project using bat for Windows
                     bat 'npm run build'
+                }
+            }
+        }
+        stage('Run JMeter Performance Test') {
+            steps {
+                script {
+                    // Run JMeter Test in non-GUI mode
+                    bat "\"${JMETER_PATH}\" -n -t ${JMETER_TEST} -l ${JMETER_RESULT} -e -o ${JMETER_REPORT_DIR}"
                 }
             }
         }
@@ -69,6 +78,18 @@ pipeline {
                             input: [transition: [id: '31']]
                         )
                     }
+                }
+            }
+        }
+        stage('Publish JMeter Performance Report') {
+            steps {
+                script {
+                    // Publish the JMeter performance testing reports in Jenkins
+                    recordIssues(
+                        tools: [
+                            jmeterReport(pattern: "${JMETER_REPORT_DIR}/*.html")
+                        ]
+                    )
                 }
             }
         }
