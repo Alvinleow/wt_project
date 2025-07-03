@@ -36,7 +36,7 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image using bat for Windows
-                    bat "docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ."
+                    bat "docker build -t alvin0816/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ."
                 }
             }
         }
