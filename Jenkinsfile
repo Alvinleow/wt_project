@@ -85,10 +85,12 @@ pipeline {
             steps {
                 script {
                     // Publish the JMeter performance testing reports in Jenkins
-                    recordIssues(
-                        tools: [
-                            jmeterReport(pattern: "${JMETER_REPORT_DIR}/*.html")
-                        ]
+                    perfReport(
+                        sourceDataFiles: '**/*.jtl',
+                        errorFailedThreshold: 2000, 
+                        errorUnstableThreshold: 1000,
+                        showTrendGraphs: true,
+                        generatePerformanceTrend: true
                     )
                 }
             }
@@ -97,7 +99,7 @@ pipeline {
 
     post {
         success {
-            echo "Build and push to Docker Hub successful!"
+            echo "Build completed successfully!"
         }
         failure {
             echo "Build failed!"
