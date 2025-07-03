@@ -55,6 +55,16 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'SC_PROJECT_JIRA', usernameVariable: 'JIRA_USERNAME', passwordVariable: 'JIRA_API_TOKEN')]) {
                     script {
+                        def transitions = jiraGetIssueTransitions(
+                            site: 'SC_RecycleGO',  // The site name you configured in Jenkins
+                            idOrKey: "${JIRA_ISSUE}"  // The issue key (e.g., "G5-1")
+                        )
+
+                        echo "Available Transitions: ${transitions}"
+
+                        def transitionId = transitions.find { it.name == 'Done' }?.id
+                        echo "Transition ID for 'Done': ${transitionId}"
+                        
                         // Add a comment to the Jira issue using the jiraAddComment step
                         jiraAddComment(
                             site: 'SC_Project1',
