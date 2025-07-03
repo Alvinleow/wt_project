@@ -46,7 +46,7 @@ pipeline {
                     script {
                         // Log in to Docker Hub and push the image using bat for Windows
                         bat "echo ${DOCKERHUB_PASS} | docker login -u ${DOCKERHUB_USER} --password-stdin"
-                        bat "docker push ${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+                        bat "docker push ${DOCKERHUB_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
                     }
                 }
             }
