@@ -8,6 +8,8 @@ const Account = require("./models/account");
 
 const saltRounds = 10;
 
+const allowedOrigins = ["http://localhost:8081", "http://localhost:8082"];
+
 connectDB()
   .then(async () => {
     try {
@@ -39,7 +41,7 @@ connectDB()
 
     app.use(
       cors({
-        origin: "http://localhost:8080",
+        origin: allowedOrigins,
         methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
         preflightContinue: false,
         optionsSuccessStatus: 204,
